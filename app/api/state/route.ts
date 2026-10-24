@@ -7,6 +7,13 @@ export async function GET() {
   try {
     const db=getDb();
     const rows=await db.select().from(reviews).orderBy(desc(reviews.updatedAt)).limit(50);
+    const ownReviews=user ? await db.select().from(reviews).where(eq(reviews.userId,user.userId)).orderBy(desc(reviews.updatedAt)) : [];
+    const month=new Date().toISOString().slice(0,7);
+    const monthly=await db.all<{restaurantId:string;n:number;avg:number}>(sql`
+      SELECT restaurant_id AS restaurantId, COUNT(*) AS n, AVG(rating) AS avg
+      FROM reviews WHERE substr(updated_at,1,7) = ${month}
+      GROUP BY restaurant_id ORDER BY avg DESC, n DESC LIMIT 10
+    `);
     const totals=await db.all<{restaurantId:string;n:number;avg:number;spend:number}>(sql`
       WITH ordered_spend AS (
         SELECT restaurant_id, spend,
@@ -25,6 +32,6 @@ export async function GET() {
       GROUP BY r.restaurant_id
     `);
     const saved=user ? await db.select({restaurantId:spots.restaurantId,status:spots.status}).from(spots).where(eq(spots.userId,user.userId)) : [];
-    return Response.json({reviews:rows.map(({userId,...review})=>({...review,own:userId===user?.userId})),spots:saved,stats:Object.fromEntries(totals.map(({restaurantId,...stat})=>[restaurantId,stat]))},{headers:{"Cache-Control":"private, no-store"}});
+    return Response.json({reviews:rows.map(({userId,...review})=>({...review,own:userId===user?.userId})),ownReviews:ownReviews.map(({userId,...review})=>({...review,own:true})),monthly,month,spots:saved,stats:Object.fromEntries(totals.map(({restaurantId,...stat})=>[restaurantId,stat]))},{headers:{"Cache-Control":"private, no-store"}});
   } catch {return Response.json({error:"Your spots and community reviews could not be loaded. Please try again."},{status:503});}
 }
