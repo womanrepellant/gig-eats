@@ -1,0 +1,30 @@
+"use client";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Plus, Minus, LocateFixed, MapPin, Utensils, X, ArrowUpRight } from "lucide-react";
+import { CAMPUS, type Restaurant } from "./data";
+import { project,unproject,fitLocations,clusterLocations } from "./map-utils";
+export default function SpotMap({spots,selected,onSelect,onOpen,score}:{spots:Restaurant[];selected:string|null;onSelect:(id:string)=>void;onOpen:(r:Restaurant)=>void;score:(r:Restaurant)=>string|null}) {
+  const box=useRef<HTMLDivElement>(null),drag=useRef<{x:number;y:number;cx:number;cy:number}|null>(null),wheelTime=useRef(0);
+  const [size,setSize]=useState({w:700,h:650}),[center,setCenter]=useState({lat:30.6129,lng:-96.3411}),[zoom,setZoom]=useState(13),[tileError,setTileError]=useState(false),[openCluster,setOpenCluster]=useState<string|null>(null);
+  const signature=spots.map(r=>r.id).join("|");
+  useEffect(()=>{if(!box.current)return;const observer=new ResizeObserver(([e])=>setSize({w:e.contentRect.width,h:e.contentRect.height}));observer.observe(box.current);return()=>observer.disconnect()},[]);
+  useEffect(()=>{const next=fitLocations(spots,size.w,size.h);setCenter(next.center);setZoom(next.zoom);setOpenCluster(null)},[signature,size.w,size.h]);
+  useEffect(()=>{const el=box.current;if(!el)return;function wheel(e:WheelEvent){e.preventDefault();if(Date.now()-wheelTime.current<180)return;wheelTime.current=Date.now();setZoom(z=>Math.max(10,Math.min(18,z+(e.deltaY<0?1:-1))));setOpenCluster(null)}el.addEventListener("wheel",wheel,{passive:false});return()=>el.removeEventListener("wheel",wheel)},[]);
+  const c=project(center.lat,center.lng,zoom),left=c.x-size.w/2,top=c.y-size.h/2;
+  const clusters=useMemo(()=>clusterLocations(spots,zoom,zoom>=17?34:48),[signature,zoom]);
+  const popup=clusters.find(g=>g.key===openCluster);
+  const tiles=[];for(let x=Math.floor(left/256);x<=Math.floor((left+size.w)/256);x++)for(let y=Math.floor(top/256);y<=Math.floor((top+size.h)/256);y++)if(y>=0&&y<2**zoom)tiles.push({x,y});
+  function fit(){const next=fitLocations(spots,size.w,size.h);setCenter(next.center);setZoom(next.zoom);setOpenCluster(null)}
+  function show(r:Restaurant){onSelect(r.id);setOpenCluster(null);onOpen(r)}
+  return <div className="spot-map" ref={box} tabIndex={0} role="region" aria-label="Interactive restaurant map. Click a marker for menus and reviews. Drag to pan, scroll or use buttons to zoom." onKeyDown={e=>{if(e.target!==e.currentTarget)return;let x=0,y=0;if(e.key==="ArrowLeft")x=-70;else if(e.key==="ArrowRight")x=70;else if(e.key==="ArrowUp")y=-70;else if(e.key==="ArrowDown")y=70;else if(e.key==="+"||e.key==="="){setZoom(Math.min(18,zoom+1));e.preventDefault();return}else if(e.key==="-"){setZoom(Math.max(10,zoom-1));e.preventDefault();return}else return;e.preventDefault();setCenter(unproject(c.x+x,c.y+y,zoom));setOpenCluster(null)}} onPointerDown={e=>{if((e.target as HTMLElement).closest("button,a"))return;drag.current={x:e.clientX,y:e.clientY,cx:c.x,cy:c.y};setOpenCluster(null);e.currentTarget.setPointerCapture(e.pointerId)}} onPointerMove={e=>{const d=drag.current;if(d)setCenter(unproject(d.cx-(e.clientX-d.x),d.cy-(e.clientY-d.y),zoom))}} onPointerUp={()=>{drag.current=null}} onPointerCancel={()=>{drag.current=null}}>
+    <div className="tiles" aria-hidden="true">{tiles.map(t=><img key={`${zoom}-${t.x}-${t.y}`} src={`https://tile.openstreetmap.org/${zoom}/${t.x}/${t.y}.png`} alt="" draggable={false} style={{left:t.x*256-left,top:t.y*256-top}} onError={()=>setTileError(true)}/>)}</div>
+    {tileError&&<div className="map-error">The base map couldn’t load. Restaurant markers are still available; use Directions for navigation.</div>}
+    <div className="map-top"><span><MapPin size={14}/> College Station</span><button onClick={fit}><LocateFixed size={15}/> Fit all {spots.length} spots</button></div>
+    {clusters.filter(g=>g.x-left>-70&&g.x-left<size.w+70&&g.y-top>-70&&g.y-top<size.h+70).map(g=>{const r=g.spots[0],multi=g.spots.length>1,rating=score(r);return <button key={g.key} className={`map-pin ${multi?"cluster":"venue-pin"} ${!multi&&r.id===selected?"selected":""}`} style={{left:g.x-left,top:g.y-top}} title={multi?`${g.spots.length} restaurants here`:r.name} aria-label={multi?`Show ${g.spots.length} restaurants here`:`Open ${r.name}`} onClick={()=>multi?setOpenCluster(openCluster===g.key?null:g.key):show(r)}>{multi?g.spots.length:rating?<><Utensils size={11}/>{rating}</>:<Utensils size={15}/>}<span className="pin-name">{multi?`${g.spots.length} spots · click to choose`:r.name}</span></button>})}
+    {(()=>{const p=project(CAMPUS.lat,CAMPUS.lng,zoom);return <div className="campus-pin" style={{left:p.x-left,top:p.y-top}}><span>★</span><small>TEXAS A&M</small></div>})()}
+    {popup&&<div className="cluster-picker"><div><strong>{popup.spots.length} spots here</strong><button className="icon-button" aria-label="Close restaurant choices" onClick={()=>setOpenCluster(null)}><X size={16}/></button></div><div className="cluster-choices">{popup.spots.map(r=><button key={r.id} onClick={()=>show(r)}><span><strong>{r.name}</strong><small>{r.type}</small></span><ArrowUpRight size={16}/></button>)}</div><button className="cluster-zoom" onClick={()=>{setCenter(unproject(popup.x,popup.y,zoom));setZoom(Math.min(18,zoom+2));setOpenCluster(null)}}>Zoom into this area <Plus size={14}/></button></div>}
+    <div className="map-zoom"><button aria-label="Zoom in" disabled={zoom>=18} onClick={()=>{setZoom(Math.min(18,zoom+1));setOpenCluster(null)}}><Plus size={19}/></button><button aria-label="Zoom out" disabled={zoom<=10} onClick={()=>{setZoom(Math.max(10,zoom-1));setOpenCluster(null)}}><Minus size={19}/></button></div>
+    <div className="map-hint"><Utensils size={13}/><span>Pick a pin. Find your next bite.</span></div><span className="sr-only" aria-live="polite">{spots.length} matching restaurants. Map zoom level {zoom}.</span>
+    <div className="map-attribution">Locations: Visit College Station · © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a></div>
+  </div>;
+}

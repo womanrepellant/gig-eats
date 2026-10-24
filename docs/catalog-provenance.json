@@ -1,0 +1,26 @@
+{
+  "checkedAt": "2026-10-24",
+  "published": 190,
+  "directMenuLinks": 148,
+  "pdfMenus": 4,
+  "duplicatesRemoved": [
+    "Sweet Paris Creperie",
+    "Tiff's Treats"
+  ],
+  "excluded": [
+    {
+      "name": "Good Luck Good Time Tea House",
+      "reason": "Location outside the College Station area",
+      "source": "https://visit.cstx.gov/directory/good-luck-good-time-tea-house/"
+    }
+  ],
+  "sourceDirectories": [
+    "https://visit.cstx.gov/food-drink/",
+    "https://visit.cstx.gov/food-drink/coffee-sweets/"
+  ],
+  "notes": [
+    "Only business facts are imported. No third-party reviews, ratings, photos, or descriptions are copied.",
+    "Prices are based on actual community-reported spend when available. No sample ratings or sample budgets are published.",
+    "Wild Pita address confirmed at https://eatwildpita.com/locations/"
+  ]
+}

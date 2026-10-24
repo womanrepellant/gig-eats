@@ -1,0 +1,1 @@
+CREATE INDEX `review_restaurant_updated` ON `reviews` (`restaurant_id`,`updated_at`,`id`);
