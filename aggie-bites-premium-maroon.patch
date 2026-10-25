@@ -1,0 +1,442 @@
+diff --git a/app/layout.tsx b/app/layout.tsx
+index ddf825e..3f60aad 100644
+--- a/app/layout.tsx
++++ b/app/layout.tsx
+@@ -1,5 +1,6 @@
+ import type { Metadata } from "next";
+ import "./globals.css";
++import "./premium-theme.css";
+ 
+ export const metadata: Metadata = {
+   title: "Aggie Bites · Find your next favorite bite",
+diff --git a/app/premium-theme.css b/app/premium-theme.css
+new file mode 100644
+index 0000000..8eeea56
+--- /dev/null
++++ b/app/premium-theme.css
+@@ -0,0 +1,425 @@
++/*
++ * Aggie Bites — Dark & Premium / Maroon
++ * An additive visual layer. All discovery, authentication, map and review
++ * logic stays in the original components. Imported AFTER globals.css.
++ */
++:root {
++  color-scheme: dark;
++  --maroon: #bb5978;
++  --maroon-dark: #8a304c;
++  --ink: #f5f0f0;
++  --muted: #b7aab2;
++  --line: #39343d;
++  --paper: #101116;
++  --green: #c3889c;
++  --premium-surface: #1b1b23;
++  --premium-surface-raised: #24232d;
++  --premium-surface-hover: #302733;
++  --premium-border: #37323d;
++  --premium-soft: #e6b5c5;
++  --premium-highlight: #e8c6b2;
++}
++
++html { background: var(--paper); }
++body {
++  background: radial-gradient(circle at 82% -30%, #49213365, transparent 46%),
++              radial-gradient(circle at 6% 28%, #2c203033, transparent 38%),
++              var(--paper);
++  color: var(--ink);
++  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
++}
++::selection { background: #a94b6b; color: #fff; }
++:where(button, input, select, textarea, a):focus-visible {
++  outline: 2px solid var(--premium-soft);
++  outline-offset: 3px;
++}
++:where(input, select, textarea) { accent-color: var(--maroon); }
++:where(input, select, textarea)::placeholder { color: #918691; opacity: 1; }
++:where(select option) { background: #1d1c25; color: var(--ink); }
++:where(*::-webkit-scrollbar) { width: 10px; height: 10px; }
++:where(*::-webkit-scrollbar-thumb) { background: #51404e; border: 2px solid #1b1b23; border-radius: 10px; }
++:where(*::-webkit-scrollbar-track) { background: #17171e; }
++
++/* Fixed navigation and premium editorial heading */
++.header,
++.map-app .header {
++  background: #141319ed;
++  border-bottom: 1px solid #50313f;
++  box-shadow: 0 8px 32px #07060b35;
++  backdrop-filter: blur(20px);
++}
++.map-app .header-inner { gap: 34px; }
++.brand, .map-app .brand { color: #fff7f4; font-weight: 760; letter-spacing: -1.25px; }
++.brand>span:last-child>span { color: #efcad6; }
++.brand b { color: #d98aa5; }
++.brand-icon, .map-app .brand-icon {
++  background: linear-gradient(145deg, #aa4766, #67243c);
++  color: #fff3f5;
++  border: 1px solid #ca7b9455;
++  border-radius: 12px;
++  box-shadow: 0 5px 18px #65253d4d;
++}
++.header nav>button, .map-app .header nav>button { color: #aea3ad; letter-spacing: .005em; }
++.header nav>button:hover, .map-app .header nav>button:hover,
++.header nav>button.active, .map-app .header nav>button.active { color: #ffe0e9; }
++.header nav>button.active:after { background: #bd607e; height: 2px; }
++.header nav>button>span { color: #f2c3d2; background: #4b2937; }
++.account-button { background: #842e4c; color: #fff; border: 1px solid #b65776; }
++.account-button:hover { background: #a44665; }
++.account-button.signed-in { background: #302431; color: #f4c9d7; }
++.account-initial { background: #583043; color: #ffe7ee; }
++
++.main, .map-main { color: var(--ink); }
++.map-main {
++  background: radial-gradient(circle at 84% 1%, #5b2a4029, transparent 42%);
++}
++h1, .explorer-intro h1, .feature-empty h2,
++.theme-hero h2, .modal-padding>h2, .detail-title h2,
++.theme-heading h2, .my-review-list h2 {
++  font-family: Iowan Old Style, Baskerville, Georgia, "Times New Roman", serif;
++  font-weight: 400;
++  letter-spacing: -1.1px;
++}
++.explorer-intro { position: relative; }
++.explorer-intro>div:first-child::before {
++  content: "DISCOVER COLLEGE STATION";
++  display: block;
++  margin-bottom: 8px;
++  color: #cb88a0;
++  font-size: 9px;
++  font-weight: 800;
++  letter-spacing: 2.5px;
++}
++.explorer-intro h1 { color: #fff9f7; text-shadow: 0 1px 18px #0006; }
++.explorer-intro p, .intro>div>p:last-child { color: #b8acb5; }
++.eyebrow { color: #cd8ea5; }
++
++/* Search controls and quick categories */
++.search-field, .map-search .search-field,
++.filter-button, .map-search .filter-button,
++.view-button, .location-button, .map-toggle {
++  background: #211f28;
++  border: 1px solid #413741;
++  color: #d5cbd1;
++  border-radius: 11px;
++  box-shadow: inset 0 1px #ffffff09, 0 3px 12px #08070b20;
++}
++.search-field:focus-within, .map-search .search-field:focus-within {
++  background: #27222d;
++  border-color: #b85d7b;
++  box-shadow: 0 0 0 3px #b85d7b30;
++  color: #f5d2df;
++}
++.search-field input, .map-search .search-field input { color: #f9f4f6; }
++.search-field input::placeholder { color: #978b99; }
++.search-field>button { color: #c0a5b5; }
++.filter-button:hover, .view-button:hover,
++.location-button:hover, .map-toggle:hover { background: #312733; border-color: #91506a; color: #ffe8f0; }
++.filter-button.applied, .view-button.active, .map-toggle.active {
++  background: #472637;
++  color: #ffd5e3;
++  border-color: #a55572;
++}
++.filter-button b { background: #af4c6e; color: #fff; }
++.location-button>svg:first-child { color: #dc8eaa; }
++.shortcut-row>button, .map-search .shortcut-row>button {
++  color: #c4b7bf;
++  border: 1px solid #3d3540;
++  background: #211f27;
++  border-radius: 999px;
++}
++.shortcut-row>button:hover, .map-search .shortcut-row>button:hover {
++  background: #322633;
++  border-color: #9e526e;
++  color: #f8d4e1;
++}
++.shortcut-row>button.active, .map-search .shortcut-row>button.active,
++.shortcut-row>button.seasonal, .shortcut-row>button.seasonal.active {
++  background: #52283a;
++  border-color: #9e506e;
++  color: #f8d7e2;
++}
++.map-search .shortcut-row>.clear-inline, .active-filters button { color: #efa5bd; }
++
++/* Consistent raised surfaces and meaningful selection */
++.panel-heading { background: #101116f2; backdrop-filter: blur(8px); }
++.panel-heading h2 { color: #fff4f4; }
++.panel-heading h2>span, .results-toolbar h2>span, .reviews-heading h3>span {
++  background: #422837;
++  color: #f4becf;
++}
++.panel-heading select, .results-controls select { color: #d2b7c7; }
++.results-panel { scrollbar-color: #51404f transparent; }
++.spot-row, .restaurant-card, .theme-card {
++  background: linear-gradient(155deg, #24212b, #1a1a22 84%);
++  color: #f6f0f2;
++  border: 1px solid #39333e;
++  box-shadow: inset 0 1px #ffffff09, 0 6px 16px #05050925;
++  border-radius: 14px;
++}
++.spot-row:hover, .restaurant-card:hover, .theme-card:hover {
++  background: linear-gradient(150deg, #342532, #25212c 88%);
++  border-color: #8b5269;
++  box-shadow: inset 0 1px #ffffff15, 0 8px 22px #05040740;
++}
++.spot-row.is-selected, .restaurant-card.is-selected {
++  background: linear-gradient(130deg, #492939, #26202b);
++  border-color: #c07790;
++  box-shadow: 0 0 0 1px #b6638040, 0 8px 24px #0006;
++}
++.spot-type-icon, .spot-type-icon.type-coffee,
++.spot-type-icon.type-seafood {
++  background: #472b3b;
++  color: #f1b6c7;
++  border: 1px solid #704056;
++  border-radius: 12px;
++}
++.spot-type-icon.type-seafood { background: #302e3c; color: #b9a8dc; border-color: #51475f; }
++.spot-type-icon.type-coffee { background: #41302e; color: #ebc3a1; border-color: #694b46; }
++.spot-name, .card-title>button { color: #f9f2f3; font-weight: 670; }
++.spot-name:hover, .card-title>button:hover { color: #ffbecf; }
++.spot-meta, .card-meta, .card-distance, .catalog-note { color: #b6a7b3; }
++.spot-meta>span, .card-meta i { color: #766a78; }
++.spot-rating { color: #b6a8b3; }
++.spot-rating>svg, .spot-rating>strong, .rating { color: #eb9bb2; }
++.spot-row-links>a, .spot-row-links>button, .card-bottom>button { color: #e6a2b8; }
++.spot-row-links>a:hover, .spot-row-links>button:hover { color: #ffe1eb; }
++.row-save { color: #b19aaa; }
++.row-save:hover, .row-save.saved { background: #522c3f; color: #f6b3c9; }
++.card-photo { background: #282630; }
++.card-save { background: #302531e8; color: #f2d5df; }
++.card-save.saved { background: #8b3351; color: #fff; }
++.card-body { color: #f7f0f3; }
++.card-bottom { border-color: #39323d; color: #b3a5b0; }
++.catalog-footer, .main-footer { border-color: #39323d; color: #a99ca7; }
++.catalog-footer>button, .main-footer>button { color: #e5a0b6; }
++.load-more {
++  background: #30202e;
++  border: 1px solid #73415a;
++  color: #f4bbcf;
++  border-radius: 11px;
++}
++.load-more:hover { background: #49293a; }
++.empty-state {
++  background: #1b1b24;
++  border: 1px dashed #684b5a;
++  color: #e9dce4;
++}
++.empty-state p { color: #b7a7b3; }
++.empty-state>span { background: #4c2b3b; color: #f8c1d2; }
++
++/* Map tiles retain the existing map engine and click/zoom behavior. */
++.spot-map, .map-workspace>.spot-map {
++  background: #232630;
++  border: 1px solid #4b3b49;
++  border-radius: 16px;
++  box-shadow: inset 0 1px #ffffff12, 0 9px 28px #0004;
++  overflow: hidden;
++}
++.spot-map .tiles img {
++  filter: grayscale(.66) invert(.91) hue-rotate(175deg) brightness(.72) contrast(.9);
++}
++.map-top>span, .map-top>button,
++.map-workspace .map-top>span, .map-workspace .map-top>button,
++.map-hint, .map-workspace .map-hint {
++  background: #201d27eb;
++  color: #f1d9e3;
++  border: 1px solid #6d4c60;
++  border-radius: 9px;
++  box-shadow: 0 6px 24px #08050b5c;
++  backdrop-filter: blur(12px);
++}
++.map-top>button:hover, .map-zoom>button:hover { background: #553042; color: #fff; }
++.map-zoom { background: #211e29; border: 1px solid #6c4b5c; border-radius: 10px; overflow: hidden; }
++.map-zoom>button { color: #f3dce6; background: #29222e; }
++.map-zoom>button+button { border-top: 1px solid #5b4152; }
++.map-workspace .map-pin.venue-pin, .map-workspace .map-pin.cluster,
++.map-pin { background: #8e3452; color: #fff9fb; border-color: #f5bfd0; }
++.map-workspace .map-pin.cluster { background: #632941; border-color: #e0b9cb; outline: 1px solid #c16a87; }
++.map-workspace .map-pin.venue-pin.selected, .map-pin.selected {
++  background: #f7dce5;
++  color: #572036;
++  border-color: #8b3552;
++  box-shadow: 0 0 0 4px #dd8aa861;
++}
++.map-workspace .pin-name, .pin-name {
++  background: #241f2b;
++  color: #fff2f6;
++  border-color: #81556a;
++}
++.campus-pin { color: #f5c6d7; }
++.campus-pin small { background: #342536ee; color: #f4d3df; }
++.map-attribution { background: #14141dcc; color: #b7a5b0 !important; }
++.map-attribution a { color: #f5b1c7; }
++.cluster-picker {
++  background: #221e29;
++  border: 1px solid #6f445a;
++  box-shadow: 0 18px 45px #0009;
++  color: #f5eef2;
++}
++.cluster-picker>div:first-child, .cluster-choices>button { color: #f3d8e3; }
++.cluster-choices>button { border-color: #433340; }
++.cluster-choices>button:hover { background: #382838; }
++.cluster-choices small { color: #b8a4b1; }
++.cluster-zoom { border-color: #473343; color: #f0a8be; }
++.map-error { background: #402434; color: #ffe6ed; border-color: #94516e; }
++
++/* Buttons and interactive surface states */
++.primary, a.primary {
++  background: linear-gradient(140deg, #9a3b59, #792c47);
++  color: #fff9fa;
++  border: 1px solid #c46b88;
++  box-shadow: inset 0 1px #ffffff16, 0 5px 18px #5a1e3b35;
++  border-radius: 10px;
++}
++.primary:hover, a.primary:hover { background: #ad4c6b; color: #fff; }
++.secondary, a.secondary, .icon-button, .share-button {
++  background: #2a2430;
++  color: #edc0cf;
++  border: 1px solid #5b4353;
++  border-radius: 10px;
++}
++.secondary:hover, a.secondary:hover, .icon-button:hover { background: #473041; color: #ffe0eb; }
++.text-button { color: #f0a8bf; }
++.toast { background: #3e2635; border-color: #9a5e77; color: #fff5f8; }
++.toast>button { color: #ffe1ec; }
++.error-banner, .form-error { background: #43292e; border-color: #7e4d4b; color: #ffd1cd; }
++.setup-notice, .review-gate { background: #403222; border-color: #79613f; color: #f1d8ad; }
++
++/* Dialogs, filters, TAMU login and review forms */
++dialog.dialog, dialog.dialog.wide {
++  background: #1d1b25;
++  color: #f8f0f2;
++  border: 1px solid #6e4358;
++  border-radius: 18px;
++  box-shadow: 0 36px 100px #000b;
++}
++dialog::backdrop { background: #0b0811c9; backdrop-filter: blur(9px); }
++.dialog-close { background: #352733; border-color: #604158; color: #fae1eb; }
++.modal-padding>h2, .detail-title h2, .venue-heading h2 { color: #fff4f4; }
++.modal-padding>p:not(.eyebrow), .detail-content>p,
++.detail-subtitle, .detail-no-photo .detail-subtitle,
++.venue-heading>p, .about-modal p { color: #bdb0ba !important; }
++.modal-symbol, .venue-symbol { background: #49283b; color: #e7a0b7; }
++.filter-section, .filter-footer, .detail-address,
++.venue-secondary-links, .review-item { border-color: #483944; }
++.filter-section h3, .filter-label, .about-modal h3,
++.review-form-wrap form>label, .form-row>label,
++.star-field legend, .email-sign-in label { color: #efcedb; }
++.filter-section h3 small, .form-note, .filter-note,
++.detail-fineprint, .sign-in-fineprint,
++.filter-checkboxes label { color: #b0a3af !important; }
++.filter-label strong, .venue-links>a { color: #f0a9c0; }
++.budget-options>button, .filter-chips>button,
++.location-option, .external-reviews,
++.review-empty, .account-email, .diet-notice {
++  background: #292530;
++  border: 1px solid #524254;
++  color: #f1d5e1;
++  border-radius: 10px;
++}
++.budget-options>button.chosen, .filter-chips>button.chosen,
++.location-option:hover, .external-reviews:hover {
++  background: #472b3c;
++  border-color: #b16380;
++  color: #fff0f5;
++}
++.budget-options span, .location-option small,
++.review-empty p, .review-author small,
++.external-reviews small { color: #b8a6b5; }
++.filter-chips>button { color: #e2c7d2; }
++.email-sign-in input, .review-form-wrap input,
++.review-form-wrap select, .review-form-wrap textarea,
++.email-sign-in select, .review-form-wrap option {
++  background: #292631;
++  border: 1px solid #60485a;
++  color: #fff4f6;
++  border-radius: 9px;
++  outline-color: #d1809d;
++}
++.email-sign-in input::placeholder, .review-form-wrap input::placeholder,
++.review-form-wrap textarea::placeholder { color: #ab99a8; }
++.email-sign-in input:focus, .review-form-wrap input:focus,
++.review-form-wrap select:focus, .review-form-wrap textarea:focus {
++  border-color: #ca7794;
++  box-shadow: 0 0 0 3px #bd638330;
++}
++.auth-switch { background: #302732; border: 1px solid #55404e; }
++.auth-switch button { color: #bfb0bc; }
++.auth-switch button.chosen { background: #70334d; color: #fff1f6; box-shadow: 0 2px 12px #0003; }
++.account-email { color: #e8c7d3 !important; }
++.signout { color: #ef9db7; }
++.detail-no-photo { background: #1d1b25; }
++.detail-address { color: #b8adb7; }
++.menu-section { background: #292330; border: 1px solid #564153; border-radius: 13px; }
++.menu-section-title, .menu-section-title h3 { color: #f4ceda; }
++.menu-section-title p, .detail-content .detail-fineprint { color: #b6a6b4; }
++.menu-actions>.text-button, .venue-secondary-links>a { color: #eeabc1; }
++.reviews-explainer { color: #bbadba !important; }
++.review-dish { color: #f0bbc9; }
++.review-item>p { color: #c8bbc4; }
++.review-avatar { background: #4d2b3d; color: #fbd3e1; }
++.review-empty strong { color: #f1c0d0; }
++.external-reviews strong { color: #f4d5df; }
++.star-field button { color: #e4a0b7; }
++.star-field span, .character-count { color: #c4adbb; }
++
++/* Monthly collection, top recommendations, saved spots and review view */
++.theme-hero {
++  background: radial-gradient(circle at 78% 18%, #bf64804d, transparent 41%),
++              linear-gradient(125deg, #3b1f31, #632b45 60%, #261a2c);
++  border: 1px solid #9b5b76;
++  box-shadow: inset 0 1px #ffffff26, 0 18px 44px #0004;
++}
++.theme-hero:after { content: "✦"; color: #f4c2d4; font-size: 180px; opacity: .1; top: 1%; }
++.theme-kicker { color: #f4c5d3; }
++.theme-hero p { color: #f3d5df; }
++.theme-hero-action { background: #f9e6ec; color: #57223b; border-radius: 10px; }
++.theme-hero-action:hover { background: #fff; }
++.theme-heading h2 { color: #fff1f2; }
++.theme-heading span, .theme-card p, .theme-card small, .theme-footer { color: #baabb6; }
++.theme-card-icon { background: #4a293c; color: #f4b4ca; }
++.theme-card h3 { color: #fff0f3; }
++.theme-card-actions button, .theme-card-actions a { color: #f3a8c0; }
++.feature-intro { color: #c0b1bb; }
++.feature-list, .feature-empty, .review-page .review-form-wrap {
++  background: #201e28;
++  border: 1px solid #453744;
++  border-radius: 16px;
++}
++.feature-row { background: #211f28; border-color: #433541; color: #fff3f5; }
++.feature-row:hover { background: #342633; }
++.feature-rank, .feature-score, .feature-empty { color: #efacc1; }
++.feature-name small, .feature-score small, .feature-empty p { color: #bcafba; }
++.feature-empty h2, .my-review-list h2 { color: #fff2f5; }
++.my-review-list button { color: #efe5ec; border-color: #493744; }
++.my-review-list button span { color: #f1b3c6; }
++
++/* Keep accessible spacing and existing small-screen map/list behavior. */
++@media (min-width: 1001px) {
++  .map-workspace { gap: 18px; }
++  .map-main { padding-top: 26px; }
++  .spot-row { padding: 18px 15px; }
++}
++@media (max-width: 760px) {
++  .explorer-intro>div:first-child::before { font-size: 8px; letter-spacing: 1.7px; margin-bottom: 5px; }
++  .map-main { background: #101116; }
++  .map-workspace { gap: 12px; }
++  .map-mode .map-workspace>.spot-map { border-radius: 12px; }
++  .panel-heading { background: #101116f2; }
++  .theme-hero { border-radius: 14px; }
++}
++@media (max-width: 600px) {
++  .header, .map-app .header { background: #141319f5; }
++  .map-app .header-inner { gap: 8px; }
++  .map-main { padding-top: 15px; }
++  .spot-row { border-radius: 12px; }
++  .map-mode .results-panel { border-radius: 12px; }
++  .map-workspace .map-top>span, .map-workspace .map-top>button { background: #201d27ed; }
++  dialog.dialog { border-radius: 14px; }
++  .modal-padding { padding: 27px 22px; }
++  .explorer-intro h1 { font-size: 27px; }
++}
++@media (prefers-reduced-motion: reduce) {
++  .spot-row, .restaurant-card, .theme-card { transition: none; }
++}
