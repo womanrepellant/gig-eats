@@ -265,10 +265,26 @@ function EmailSignIn({
 
 type ReviewData={restaurantId:string;author:string;rating:number;dish:string;body:string;spend:number;visitedAt:string};
 function ReviewForm({user,initialId,existing,busy,onAccount,onSubmit}:{user:User;initialId:string;existing:PublicReview[];busy:boolean;onAccount:()=>void;onSubmit:(d:ReviewData)=>Promise<void>}) {
-  const [id,setId]=useState(initialId),[rating,setRating]=useState(0),[author,setAuthor]=useState(user?.name==="Fellow foodie"?"":user?.name??""),[dish,setDish]=useState(""),[body,setBody]=useState(""),[spend,setSpend]=useState(""),[date,setDate]=useState(new Date().toISOString().slice(0,10)),[error,setError]=useState("");
+  const [id,setId]=useState(initialId);
+  const [rating,setRating]=useState(0);
+  const [author,setAuthor]=useState(user?.name==="Fellow foodie"?"":user?.name??"");
+  const [dish,setDish]=useState("");
+  const [body,setBody]=useState("");
+  const [spend,setSpend]=useState("");
+  const [date,setDate]=useState(new Date().toISOString().slice(0,10));
+  const [error,setError]=useState("");
+
   const own=existing.find(r=>r.restaurantId===id&&r.own);
-  useEffect(()=>{setRating(own?.rating??0);setDish(own?.dish??"");setBody(own?.body??"");setSpend(own?String(own.spend):"");setDate(own?.visitedAt??new Date().toISOString().slice(0,10));if(own)setAuthor(own.author)},[id,own]);
   
+  useEffect(()=>{
+    setRating(own?.rating??0);
+    setDish(own?.dish??"");
+    setBody(own?.body??"");
+    setSpend(own?String(own.spend):"");
+    setDate(own?.visitedAt??new Date().toISOString().slice(0,10));
+    if(own) setAuthor(own.author);
+  },[id,own]);
+
   async function submit(e:FormEvent){
     e.preventDefault();
     if(!user){
