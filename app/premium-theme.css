@@ -430,3 +430,151 @@ dialog::backdrop { background: #0b0811c9; backdrop-filter: blur(9px); }
   object-fit: contain;
   border-radius: 50%;
 }
+
+
+/* SNAGGIES PREMIUM LOGIN REDESIGN */
+
+/* Remove the redundant page heading */
+.map-main:has(.login-page) .explorer-intro {
+  display: none;
+}
+
+.map-main:has(.login-page) {
+  overflow-y: auto;
+}
+
+/* Center the login card */
+.login-page {
+  width: 100%;
+  max-width: none;
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+  padding: 45px 16px 55px;
+}
+
+/* Dark login card */
+.login-page > .email-sign-in {
+  width: min(100%, 460px);
+  margin: 0 auto;
+  padding: 36px;
+  background: linear-gradient(145deg, #24212b, #19171f);
+  border: 1px solid #58384a;
+  border-radius: 20px;
+  box-shadow: 0 24px 70px #0007;
+  color: #fff5f7;
+}
+
+/* Smaller maroon icon */
+.login-page .modal-symbol {
+  width: 52px;
+  height: 52px;
+  margin-bottom: 22px;
+  border-radius: 14px;
+  background: #51283d;
+  color: #f0adc4;
+}
+
+/* Heading and descriptions */
+.login-page .email-sign-in > h2 {
+  color: #fff5f7;
+  font-size: 36px;
+  letter-spacing: -1px;
+  margin-bottom: 10px;
+}
+
+.login-page .email-sign-in > p:not(.eyebrow) {
+  color: #bdb0bb !important;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.login-page .email-sign-in .eyebrow {
+  color: #d98faa;
+  font-size: 10px;
+  letter-spacing: 2px;
+}
+
+/* Login / Create account tabs */
+.login-page .auth-switch {
+  display: flex;
+  background: #17151d;
+  border: 1px solid #493443;
+  border-radius: 11px;
+  padding: 5px;
+  margin: 24px 0 20px;
+}
+
+.login-page .auth-switch button {
+  color: #baaab6;
+  border-radius: 8px;
+  min-height: 40px;
+}
+
+.login-page .auth-switch button.chosen {
+  background: #79334e;
+  color: white;
+}
+
+/* Compact form spacing */
+.login-page .email-sign-in form {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.login-page .email-sign-in form > label {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  color: #ead2dd;
+  font-size: 12px;
+}
+
+/* Dark input fields */
+.login-page .email-sign-in input {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 14px;
+  background: #15131b;
+  color: #fff5f7;
+  border: 1px solid #514052;
+  border-radius: 10px;
+}
+
+.login-page .email-sign-in input:focus {
+  border-color: #cf7999;
+  outline: none;
+  box-shadow: 0 0 0 3px #a94b6b30;
+}
+
+/* Login button */
+.login-page .email-sign-in .primary {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 6px;
+  background: linear-gradient(120deg, #9a3c5c, #752a46);
+  border: 1px solid #b75e7e;
+  border-radius: 10px;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.login-page .email-sign-in .primary:hover {
+  background: #ac4d6c;
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  .login-page {
+    padding: 20px 12px 35px;
+  }
+
+  .login-page > .email-sign-in {
+    padding: 26px 22px;
+  }
+
+  .login-page .email-sign-in > h2 {
+    font-size: 30px;
+  }
+}
