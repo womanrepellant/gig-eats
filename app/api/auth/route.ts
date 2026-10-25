@@ -23,7 +23,6 @@ export async function POST(req: Request) {
       action?: 'login' | 'register';
     };
 
-    // 1. Validate TAMU Email Domain
     if (!email || !email.trim().toLowerCase().endsWith('@tamu.edu')) {
       return NextResponse.json(
         { error: 'Registration and login are restricted to @tamu.edu email addresses.' },
@@ -41,7 +40,6 @@ export async function POST(req: Request) {
     const cleanEmail = email.trim().toLowerCase();
     const sheets = getGoogleSheetsClient();
 
-    // Fetch existing users from Sheet1!A:C
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
       range: 'Sheet1!A:C',
@@ -52,7 +50,7 @@ export async function POST(req: Request) {
       (row) => row[0] && row[0].toLowerCase() === cleanEmail
     );
 
-    // --- REGISTER / NEW ACCOUNT ---
+    // --- REGISTER ---
     if (action === 'register') {
       if (userRow) {
         return NextResponse.json(
@@ -73,11 +71,22 @@ export async function POST(req: Request) {
         },
       });
 
-      return NextResponse.json({
+      const res = NextResponse.json({
         success: true,
         message: 'Account created successfully!',
-        user: { email: cleanEmail },
+        user: { name: cleanEmail.split('@')[0], email: cleanEmail },
       });
+
+      // Set auth cookie
+      res.cookies.set('tamu_user', cleanEmail, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 7, // 1 week
+      });
+
+      return res;
     }
 
     // --- LOGIN ---
@@ -99,11 +108,22 @@ export async function POST(req: Request) {
         );
       }
 
-      return NextResponse.json({
+      const res = NextResponse.json({
         success: true,
         message: 'Logged in successfully!',
-        user: { email: cleanEmail },
+        user: { name: cleanEmail.split('@')[0], email: cleanEmail },
       });
+
+      // Set auth cookie
+      res.cookies.set('tamu_user', cleanEmail, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 7, // 1 week
+      });
+
+      return res;
     }
 
     return NextResponse.json({ error: 'Invalid action specified.' }, { status: 400 });
