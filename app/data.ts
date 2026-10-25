@@ -1,6 +1,7 @@
 import catalog from "./catalog.json";
+import verifiedDietary from "./dietary-updates.json";
 export type Restaurant = {id:string;name:string;type:string;image:string;address:string;website:string|null;phone:string|null;lat:number;lng:number;budget:number|null;tags:string[];dietary:string[];description:string;menuUrl:string|null;menuIsPdf:boolean;menuSource:string;sourceUrl:string;checkedAt:string};
-export const restaurants:Restaurant[]=catalog;
+export const restaurants:Restaurant[]=catalog.map(r=>({...r,dietary:[...new Set([...r.dietary,...((verifiedDietary as Record<string,string[]>)[r.id]??[])])]}));
 export const CATALOG_CHECKED_AT="2026-10-24";
 export type PublicReview = {id:string;restaurantId:string;author:string;rating:number;dish:string;body:string;spend:number;visitedAt:string;updatedAt:string;own:boolean};
 export type Spot = {restaurantId:string;status:"want"|"been"};

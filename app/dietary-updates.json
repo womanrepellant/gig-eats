@@ -1,0 +1,57 @@
+{
+  "mod-pizza": [
+    "Vegetarian options",
+    "Vegan options",
+    "Gluten-free options"
+  ],
+  "blaze-pizza": [
+    "Vegetarian options",
+    "Vegan options",
+    "Gluten-free options"
+  ],
+  "cava": [
+    "Vegetarian options",
+    "Vegan options",
+    "Gluten-free options"
+  ],
+  "freebirds-rock-prairie": [
+    "Vegetarian options",
+    "Vegan options"
+  ],
+  "freebirds-texas-ave-dining": [
+    "Vegetarian options",
+    "Vegan options"
+  ],
+  "freebirds-university-hwy-6": [
+    "Vegetarian options",
+    "Vegan options"
+  ],
+  "dimassis-mediterranean-buffet": [
+    "Vegetarian options",
+    "Vegan options",
+    "Gluten-free options",
+    "Halal options"
+  ],
+  "pokéworks": [
+    "Vegetarian options",
+    "Vegan options",
+    "Gluten-free options"
+  ],
+  "original-chopshop": [
+    "Vegetarian options",
+    "Vegan options",
+    "Gluten-free options"
+  ],
+  "shiraz-shish-kabob": [
+    "Vegetarian options",
+    "Halal options"
+  ],
+  "piada-italian-street-food": [
+    "Vegetarian options",
+    "Gluten-free options"
+  ],
+  "taz": [
+    "Vegetarian options",
+    "Gluten-free options"
+  ]
+}
