@@ -24,13 +24,17 @@ export default function Discover(){
  const[monthly,setMonthly]=useState<MonthlySpot[]>([]),[month,setMonth]=useState(""),[myReviews,setMyReviews]=useState<PublicReview[]>([]),[reviewTarget,setReviewTarget]=useState(""),[user,setUser]=useState<User>(null),[authReady,setAuthReady]=useState(false),[reviews,setReviews]=useState<PublicReview[]>([]),[saved,setSaved]=useState<Spot[]>([]),[loaded,setLoaded]=useState(false),[loadError,setLoadError]=useState(""),[busy,setBusy]=useState(false),[toast,setToast]=useState(""),[listLimit,setListLimit]=useState(24);
  const afterAuth=useRef<(()=>Promise<void>)|null>(null),authReturn=useRef<Modal>(null),toastTimer=useRef<ReturnType<typeof setTimeout>|null>(null),listPanel=useRef<HTMLDivElement>(null);
  const notify=useCallback((text:string)=>{setToast(text);if(toastTimer.current)clearTimeout(toastTimer.current);toastTimer.current=setTimeout(()=>setToast(""),4500)},[]);
+ 
  const refreshSession=useCallback(async()=>{const r=await fetch("/api/auth/session",{method:"POST"});const d=await r.json() as{user:{name:string;email:string}|null;configured:boolean;error?:string};if(!r.ok)throw Error(d.error||"Sign-in is temporarily unavailable.");setUser(d.user?{...d.user,eligible:true}:null);setAuthReady(d.configured);return d.user},[]);
  const loadState=useCallback(async()=>{try{const r=await fetch("/api/state",{cache:"no-store"});const d=await r.json() as{error:string;reviews:PublicReview[];spots:Spot[];stats:RatingStats;monthly:MonthlySpot[];month:string;ownReviews:PublicReview[]};if(!r.ok)throw Error(d.error);setReviews(d.reviews);setSaved(d.spots);setStats(d.stats);setMonthly(d.monthly||[]);setMonth(d.month||"");setMyReviews(d.ownReviews||[]);setLoadError("");setLoaded(true)}catch(e){setLoadError(e instanceof Error?e.message:"Could not load reviews.");setLoaded(true)}},[]);
+ 
  useEffect(()=>{void refreshSession().catch(()=>{}).finally(()=>void loadState());const timer=setInterval(()=>void refreshSession().catch(()=>{}),10*60*1000);const monthlyTimer=setInterval(()=>void loadState(),60*60*1000);return()=>{clearInterval(timer);clearInterval(monthlyTimer);if(toastTimer.current)clearTimeout(toastTimer.current)}},[refreshSession,loadState]);
  useEffect(()=>{const id=new URLSearchParams(window.location.search).get("spot");if(restaurants.some(r=>r.id===id)){setModal({kind:"detail",id:id!});setSelected(id)}},[]);
+ 
  const loadReviews=useCallback(async(id:string,offset=0,signal?:AbortSignal)=>{setReviewLoading(true);setReviewError("");try{const response=await fetch(`/api/reviews?restaurantId=${encodeURIComponent(id)}&offset=${offset}`,{signal,cache:"no-store"});const data=await response.json() as {reviews:PublicReview[];hasMore:boolean;nextOffset:number;error?:string};if(!response.ok)throw Error(data.error||"Could not load reviews.");if(signal?.aborted)return;setReviews(old=>{const existing=offset?old:old.filter(r=>r.restaurantId!==id);const merged=new globalThis.Map(existing.map(r=>[r.id,r]));for(const r of data.reviews)merged.set(r.id,r);return [...merged.values()]});setReviewPage({id,next:data.nextOffset,more:data.hasMore})}catch(e){if(!signal?.aborted)setReviewError(e instanceof Error?e.message:"Could not load reviews.")}finally{if(!signal?.aborted)setReviewLoading(false)}},[]);
  const reviewRestaurant=modal&&(modal.kind==="detail"||modal.kind==="review")?modal.id:"";
  useEffect(()=>{if(!reviewRestaurant||!loaded)return;const controller=new AbortController();void loadReviews(reviewRestaurant,0,controller.signal);return()=>controller.abort()},[reviewRestaurant,modal?.kind,user?.email,loaded,loadReviews]);
+ 
  function score(r:Restaurant){return stats[r.id]?.avg??null}
  function scoreText(r:Restaurant){return score(r)?.toFixed(1)??null}
  function budget(r:Restaurant){return stats[r.id]?.spend??null}
@@ -41,11 +45,40 @@ export default function Discover(){
  function navigate(next:"explore"|"saved"|"theme"|"top"|"reviews"|"login"){setPage(next);clear();setSavedType("all");listPanel.current?.scrollTo({top:0})}
  function open(r:Restaurant){setModal({kind:"detail",id:r.id});setSelected(r.id)}
  function signIn(returnTo:Modal=null){authReturn.current=returnTo;setModal({kind:"auth"})}
+ 
  async function write(path:string,body:unknown,method="POST"){const request=()=>fetch(path,{method,headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});let r=await request();if(r.status===401){const refreshed=await refreshSession();if(refreshed)r=await request()}const d=await r.json() as{error?:string};if(!r.ok)throw Error(d.error||"Could not save your changes.")}
  async function performSave(r:Restaurant,status:"want"|"been"|null){setBusy(true);try{await write("/api/spots",{restaurantId:r.id,status});setSaved(old=>[...old.filter(s=>s.restaurantId!==r.id),...(status?[{restaurantId:r.id,status}]:[])]);notify(status==="want"?"Saved to your want-to-try list":status==="been"?"Marked as been there":"Removed from Saved")}finally{setBusy(false)}}
  async function save(r:Restaurant,status:"want"|"been"|null){if(busy)return;if(!user){afterAuth.current=()=>performSave(r,status);signIn(modal?.kind==="detail"?modal:null);return}if(loadError){notify("Reload your spots before making changes.");return}try{await performSave(r,status)}catch(e){notify(e instanceof Error?e.message:"Could not save spot")}}
  async function removeReview(r:Restaurant){if(busy)return;setBusy(true);try{await write("/api/reviews",{restaurantId:r.id},"DELETE");await loadState();await loadReviews(r.id);notify("Your review was deleted")}catch(e){notify(e instanceof Error?e.message:"Could not delete review")}finally{setBusy(false)}}
- async function signedIn(nextUser:{name:string;email:string}){setUser({...nextUser,eligible:true});await loadState();setModal(authReturn.current);if(!authReturn.current)setPage("reviews");authReturn.current=null;const action=afterAuth.current;afterAuth.current=null;if(action){try{await action()}catch(e){notify(e instanceof Error?e.message:"Could not save spot")}}else notify("You’re signed in. Welcome to Aggie Bites!")}
+ 
+ async function signedIn(nextUser: { name?: string; email: string }) {
+   const displayName = nextUser.name || nextUser.email.split('@')[0];
+   const activeUser = { name: displayName, email: nextUser.email, eligible: true as const };
+   
+   setUser(activeUser);
+   setModal(authReturn.current);
+   
+   if (!authReturn.current) {
+     setPage("reviews");
+   }
+   
+   authReturn.current = null;
+   const action = afterAuth.current;
+   afterAuth.current = null;
+
+   if (action) {
+     try {
+       await action();
+     } catch (e) {
+       notify(e instanceof Error ? e.message : "Could not save spot");
+     }
+   } else {
+     notify("You’re signed in. Welcome to Aggie Bites!");
+   }
+
+   void loadState();
+ }
+
  async function signOut(){try{await write("/api/auth/logout",{});setUser(null);setSaved([]);setMyReviews([]);setModal(null);notify("You’ve signed out")}catch(e){notify(e instanceof Error?e.message:"Could not sign out")}}
  const filtered=restaurants.filter(r=>{const status=saved.find(s=>s.restaurantId===r.id)?.status;if(page==="saved"&&(!status||(savedType!=="all"&&status!==savedType)))return false;if(query&&!`${r.name} ${r.type} ${r.address}`.toLowerCase().includes(query.toLowerCase()))return false;const rating=score(r);if(filters.aggieOnly&&rating===null)return false;if(filters.minStars>0&&(rating===null||rating<filters.minStars))return false;if(miles(origin,r)>filters.radius)return false;const price=budget(r);if(filters.prices.length&&(price===null?!filters.unknownPrice:!filters.prices.includes(priceBand(price))))return false;if(filters.cuisines.length&&!filters.cuisines.includes(r.type))return false;if(filters.dietary.length&&!filters.dietary.every(d=>r.dietary.includes(d)))return false;if(filters.menuOnly&&!r.menuUrl)return false;if(quick==="mexican"&&!/Mexican/.test(r.type))return false;if(quick==="coffee"&&!/Coffee|Desserts/.test(r.type))return false;if(quick==="pizza"&&r.type!=="Pizza")return false;return true}).sort((a,b)=>sort==="rating"?(score(b)??-1)-(score(a)??-1)||miles(origin,a)-miles(origin,b):sort==="price"?(budget(a)??Infinity)-(budget(b)??Infinity)||miles(origin,a)-miles(origin,b):sort==="name"?a.name.localeCompare(b.name):miles(origin,a)-miles(origin,b));
  const resultKey=filtered.map(r=>r.id).join("|");useEffect(()=>{setListLimit(24);listPanel.current?.scrollTo({top:0})},[resultKey]);
@@ -56,6 +89,7 @@ export default function Discover(){
  const monthLabel=month?new Date(`${month}-01T12:00:00Z`).toLocaleString("en-US",{month:"long",year:"numeric",timeZone:"UTC"}):"This month";
  const ratedSeafood=restaurants.filter(r=>/seafood/i.test(r.type)&&score(r)!==null).sort((a,b)=>(score(b)??0)-(score(a)??0)||(stats[b.id]?.n??0)-(stats[a.id]?.n??0));
  const seafoodPicks=ratedSeafood.length?ratedSeafood.slice(0,6):FEATURED_IDS.map(id=>restaurants.find(r=>r.id===id)).filter((r):r is Restaurant=>!!r);
+
  return <div className="app-shell map-app"><header className="header"><div className="header-inner"><button className="brand" onClick={()=>navigate("explore")} aria-label="Aggie Bites home"><span className="brand-icon"><Utensils size={23}/></span><span>aggie<span>bites</span><b>.</b></span></button><nav aria-label="Main navigation"><button className={page==="explore"?"active":""} onClick={()=>navigate("explore")}>Map</button><button className={page==="top"?"active":""} onClick={()=>navigate("top")}>Top Recommended</button><button className={page==="theme"?"active":""} onClick={()=>navigate("theme")}>Monthly Themes</button><button className={page==="reviews"?"active":""} onClick={()=>navigate(user?"reviews":"login")}>{user?"Your Reviews":"Login"}</button></nav></div></header>
  <main className={`main map-main ${showMap?"map-mode":"list-mode"}`}><section className="explorer-intro"><div><h1>{page==="saved"?"Your next bite, saved.":page==="theme"?"See-food is here.":page==="top"?"Top Recommended":page==="reviews"?"Your Reviews":page==="login"?"Login":"Find your next bite."}</h1><p>{restaurants.length} restaurants, cafés & sweet spots around College Station.</p></div>{(page==="explore"||page==="saved")&&<button className="location-button" onClick={()=>setModal({kind:"location"})}><MapPin size={15}/> Near {originName}<ChevronDown size={13}/></button>}</section>
  {page==="theme"&&<section className="theme-page" aria-label="Monthly theme"><div className="theme-hero"><span className="theme-kicker"><Fish size={16}/> {monthLabel.toUpperCase()} · SEAFOOD</span><h2>This month’s theme is see-food.</h2><p>A little ocean air for your next meal. Explore seafood spots around College Station and check their menus.</p><button className="theme-hero-action" onClick={()=>{navigate("explore");setQuick("all");setFilters({...INITIAL,cuisines:["Seafood","Steaks & seafood"]})}}>See all seafood spots <ArrowRight size={16}/></button></div><div className="theme-heading"><h2>Featured restaurants</h2><span>{ratedSeafood.length?"Highest Aggie-rated seafood spots":"Featured seafood picks · awaiting Aggie ratings"}</span></div><div className="theme-grid">{seafoodPicks.map(r=><article className="theme-card" key={r.id}><span className="theme-card-icon"><CuisineIcon type={r.type} size={28}/></span><div><small>{r.type} · {miles(origin,r).toFixed(1)} mi from {originName}</small><h3>{r.name}</h3><p>{r.address}</p><div className="theme-card-actions"><button onClick={()=>open(r)}>See restaurant <ArrowRight size={15}/></button><a href={r.menuUrl||r.website||r.sourceUrl} target="_blank" rel="noreferrer">Menu <ArrowUpRight size={13}/></a></div></div></article>)}</div><p className="theme-footer">A monthly collection, not a claim about current specials or availability.</p></section>}{page==="top"&&<section className="feature-page" aria-label="Top Recommended"><p className="feature-intro">The 10 highest average Aggie ratings from reviews posted in {monthLabel}. Ties favor more ratings. The list updates automatically as the month changes.</p>{monthly.length?<div className="feature-list">{monthly.map((entry,i)=>{const r=restaurants.find(item=>item.id===entry.restaurantId);return r?<button key={r.id} className="feature-row" onClick={()=>open(r)}><span className="feature-rank">{String(i+1).padStart(2,"0")}</span><span className="feature-name"><strong>{r.name}</strong><small>{r.type} · {r.address}</small></span><span className="feature-score"><Star size={17} fill="currentColor"/> {Number(entry.avg).toFixed(1)} <small>({entry.n})</small></span><ArrowRight size={17}/></button>:null})}</div>:<div className="feature-empty"><Star size={28}/><h2>No ratings yet this month.</h2><p>Once verified Aggies review places, the top ten will appear here.</p><button className="primary" onClick={()=>user?navigate("reviews"):signIn()}>Write a review <ArrowRight size={16}/></button></div>}</section>}
@@ -100,7 +134,6 @@ function EmailSignIn({
 
     const normalized = email.trim().toLowerCase();
 
-    // Validate TAMU email domain
     if (!normalized.endsWith("@tamu.edu")) {
       setError("Please use a valid @tamu.edu email address.");
       return;
