@@ -578,3 +578,180 @@ dialog::backdrop { background: #0b0811c9; backdrop-filter: blur(9px); }
     font-size: 30px;
   }
 }
+
+
+/* Snaggies: left filters and expanding map */
+
+.map-search .shortcut-row {
+  display: none;
+}
+
+.map-main.filters-hidden .map-workspace {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.map-main.filters-hidden .results-panel {
+  display: none;
+}
+
+.map-main.filters-hidden .map-workspace > .spot-map {
+  grid-column: 1;
+}
+
+.snaggies-filter-panel {
+  padding: 18px;
+  margin-bottom: 15px;
+  border: 1px solid #624256;
+  border-radius: 15px;
+  background: #201c27;
+  color: #f4e9ef;
+}
+
+.snaggies-filter-title {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.snaggies-filter-title small {
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: #d49ab0;
+}
+
+.snaggies-filter-title h2 {
+  font: normal 22px Georgia, serif;
+  margin-top: 5px;
+}
+
+.snaggies-filter-title button {
+  border: 1px solid #65475a;
+  border-radius: 8px;
+  padding: 7px;
+  color: #f0c9d8;
+}
+
+.snaggies-filter-panel > label:not(.snaggies-check) {
+  display: grid;
+  gap: 7px;
+  font-size: 12px;
+  margin: 12px 0;
+  color: #e1c7d3;
+}
+
+.snaggies-filter-panel select {
+  width: 100%;
+  min-height: 40px;
+  background: #15141d;
+  border: 1px solid #5e4659;
+  border-radius: 9px;
+  color: #fff;
+  padding: 10px;
+}
+
+.snaggies-check {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  font-size: 12px;
+  margin: 16px 0;
+  color: #ded1d9;
+}
+
+.snaggies-check input {
+  accent-color: #b25c7a;
+}
+
+.snaggies-filter-actions {
+  display: flex;
+  gap: 9px;
+  border-top: 1px solid #493644;
+  padding-top: 15px;
+}
+
+.snaggies-filter-actions button {
+  flex: 1;
+  padding: 10px;
+  border-radius: 9px;
+  font-size: 11px;
+  background: #69324a;
+  color: white;
+}
+
+.snaggies-filter-actions button + button {
+  background: #332631;
+  border: 1px solid #695065;
+}
+
+/* Ocean-blue See-Food page */
+
+.theme-page .theme-hero {
+  background:
+    radial-gradient(circle at 85% 15%, #3cd9d64d, transparent 35%),
+    linear-gradient(125deg, #09283d, #0b556e 58%, #148e96);
+  border: 1px solid #4e9aa9;
+  box-shadow: 0 18px 40px #001b2f80;
+}
+
+.theme-page .theme-hero::after {
+  content: "≈";
+  color: #ddffff;
+  font-size: 190px;
+  opacity: .16;
+  top: -20px;
+}
+
+.theme-page .theme-kicker {
+  color: #b5fcf4;
+}
+
+.theme-page .theme-hero p {
+  color: #c9f1f2;
+}
+
+.theme-page .theme-hero-action {
+  background: #e1fffa;
+  color: #064e5d;
+}
+
+.theme-page .theme-card {
+  background: linear-gradient(150deg, #15394a, #0c2735);
+  border-color: #326f80;
+}
+
+.theme-page .theme-card-icon {
+  background: #155a68;
+  color: #b3fff4;
+}
+
+.theme-page .theme-card h3,
+.theme-page .theme-heading h2 {
+  color: #edffff;
+}
+
+.theme-page .theme-card p,
+.theme-page .theme-card small {
+  color: #b9e1e7;
+}
+
+.theme-page .theme-card-actions button,
+.theme-page .theme-card-actions a {
+  color: #9bf2ed;
+}
+
+@media (max-width: 600px) {
+  .snaggies-filter-panel {
+    display: none;
+  }
+
+  .map-main.filters-hidden .results-panel {
+    display: block;
+  }
+
+  .map-main.filters-hidden .map-workspace {
+    display: flex;
+    flex-direction: column;
+  }
+}
