@@ -22,7 +22,7 @@ Never put service account credentials in client-side variables (for example, `NE
 - `Reviews`: `id`, `user_id`, `restaurant_id`, `author`, `rating`, `dish`, `body`, `spend`, `visited_at`, `updated_at`.
 - `Spots`: `user_id`, `restaurant_id`, `status`.
 
-The server creates missing `Reviews` and `Spots` tabs. The service account has access to the spreadsheet, so server route validation and signed HttpOnly sessions enforce account ownership. Google Sheets has no row-level security or transactional uniqueness constraint; simultaneous first-time writes for the same account/restaurant can race. Back up the spreadsheet before manual changes.
+The server creates missing `Reviews` and `Spots` tabs. The service account has access to the spreadsheet, so server route validation and signed HttpOnly sessions enforce account ownership. Google Sheets has no row-level security or transactional uniqueness constraint; simultaneous first-time writes for the same account/restaurant can race. Supabase data, if present in the former backend, is left untouched and is not automatically copied; preserve or migrate any existing reviews before switching production traffic. Private saved spots and owner mapping require an authenticated export. Back up the spreadsheet before manual changes.
 
 Account creation restricts the email suffix to `@tamu.edu`; it does not verify mailbox ownership or current enrollment. Do not describe an account as email-verified.
 
