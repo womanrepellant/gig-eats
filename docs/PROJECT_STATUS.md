@@ -10,7 +10,15 @@ Updated: 2026-10-25
 - Supabase route/data code, schema, environment references, and unused Supabase Auth endpoints have been removed from the Next.js runtime.
 - Session cookies are HMAC-signed and HttpOnly; signature key uses `SESSION_SECRET` when set, otherwise `GOOGLE_PRIVATE_KEY`. Legacy unsigned cookies will require a new login.
 - No production Google spreadsheet has been queried or changed from this session. Local credentials and a Vercel CLI/connector are absent; live spreadsheet operations and preview deployment remain unverified. The previous Supabase project was not modified. Existing Supabase reviews/bookmarks, if any, have not been migrated.
-- Base commit: `ae2568d2`. Candidate implementation commit: `990a181f` (`Move app storage to Google Sheets`) with status commits on branch `codex/google-sheets-storage`. Branch was pushed to `origin/codex/google-sheets-storage`; no PR or production merge was created.
+- Base commit: `ae2568d2`; the branch was rebased onto `origin/main` at `2cc99304`. Candidate implementation and follow-up commits are on branch `codex/google-sheets-storage`, pushed to origin; no PR or production merge was created.
+
+## Latest UI change
+
+- Added an inline vector pufferfish to the Monthly Themes hero and a coordinated, colored fish illustration to each featured restaurant card. The fish bob gently; `prefers-reduced-motion` disables the animation.
+- Local browser preview showed the pufferfish and restaurant fish; DOM verification found 4 featured cards and 4 card illustrations.
+- `pnpm check` and the production webpack build passed after this change.
+- `pnpm test` now fails on a pre-existing catalog assertion (`scripts/check-catalog.mjs:7` expects every budget to be null; current rebased catalog includes a `$22` value). This is unrelated to the fish UI.
+- ESLint on `app/discover.tsx` reports existing unused-variable and set-state-in-effect findings; the new fish component adds no reported lint finding.
 
 ## Changes made
 
@@ -60,4 +68,4 @@ Updated: 2026-10-25
 
 ## Next action
 
-Inspect the Vercel preview for `codex/google-sheets-storage` and validate Google Sheets CRUD against a test spreadsheet before production cutover.
+Review the Monthly Themes fish illustrations on the pushed branch. Separately, complete live Google Sheets/Vercel validation before production cutover.
