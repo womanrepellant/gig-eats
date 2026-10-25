@@ -10,7 +10,28 @@ Updated: 2026-10-25
 - Supabase route/data code, schema, environment references, and unused Supabase Auth endpoints have been removed from the Next.js runtime.
 - Session cookies are HMAC-signed and HttpOnly; signature key uses `SESSION_SECRET` when set, otherwise `GOOGLE_PRIVATE_KEY`. Legacy unsigned cookies will require a new login.
 - No production Google spreadsheet has been queried or changed from this session. Local credentials and a Vercel CLI/connector are absent; live spreadsheet operations and preview deployment remain unverified. The previous Supabase project was not modified. Existing Supabase reviews/bookmarks, if any, have not been migrated.
-- Base commit: `ae2568d2`. Candidate implementation commit: `990a181f` (`Move app storage to Google Sheets`) with status commits on branch `codex/google-sheets-storage`. Branch was pushed to `origin/codex/google-sheets-storage`; no PR or production merge was created.
+- The fish feature and follow-up commits are on `codex/google-sheets-storage`, pushed to origin. Pull request #5 is open; it has not been merged or deployed to production.
+
+## Latest UI change
+
+- Commit `97ee132d` (`Add playful fish to monthly theme`) adds an inline vector pufferfish to the Monthly Themes hero and a coordinated, colored fish illustration to each featured restaurant card. The fish bob gently; `prefers-reduced-motion` disables the animation.
+- Local browser preview showed the pufferfish and restaurant fish; DOM verification found 4 featured cards and 4 card illustrations.
+- `pnpm check` and the production webpack build passed after this change.
+- `pnpm test` now fails on a pre-existing catalog assertion (`scripts/check-catalog.mjs:7` expects every budget to be null; current rebased catalog includes a `$22` value). This is unrelated to the fish UI.
+- ESLint on `app/discover.tsx` reports existing unused-variable and set-state-in-effect findings; the new fish component adds no reported lint finding.
+
+## Pixel-art refinement
+
+- User asked to make the Monthly Themes illustrations more Minecraft-like, then requested a front-facing puffer and simpler illustrations. The puffer now faces forward with symmetrical square eyes and fins; each featured-restaurant fish is reduced to a basic pixel silhouette with only a few color blocks.
+- CSS enables pixelated rendering and the bob animation is restricted to a one-pixel vertical movement so the square edges remain crisp. Reduced-motion handling remains in place.
+- Local preview visually confirmed the blocky puffer and fish on the featured cards. After this refinement, `pnpm check` passed and `pnpm exec next build --webpack` passed, including its TypeScript stage and static page generation. Local Node v26.12.1 emits the expected package engine warning because the project targets Node 22.x.
+- `git diff --check` passed. Commit `119dd8c6` (`Simplify monthly theme fish illustrations`) was pushed to `origin/codex/google-sheets-storage`.
+
+## Pull request conflict resolution
+
+- PR #5 reported conflicts in `app/discover.tsx` and `app/premium-theme.css` against a newer `main` that includes the Gig ’eats branding, updated seafood selection and ratings, and an underwater theme treatment.
+- Merging `origin/main` at `00747815` into the feature branch. The newer main version is retained, and the simple inline pixel puffer and fish are reapplied to its Monthly Themes hero and featured restaurant cards. Existing map, restaurant, rating, and backend changes from main are preserved.
+- Conflict markers have been removed from the two source files. TypeScript (`pnpm check`) and `pnpm exec next build --webpack` both pass after the merge; the build generated all 10 static pages and listed the expected dynamic API routes. `git diff --cached --check` passed. Merge commit `dc0a60a1` (`Merge main and resolve monthly theme conflicts`) is created and ready to push to update PR #5.
 
 ## Changes made
 
@@ -60,4 +81,4 @@ Updated: 2026-10-25
 
 ## Next action
 
-Inspect the Vercel preview for `codex/google-sheets-storage` and validate Google Sheets CRUD against a test spreadsheet before production cutover.
+Complete live Google Sheets/Vercel validation before production cutover.
