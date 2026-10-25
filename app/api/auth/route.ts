@@ -17,7 +17,11 @@ function getGoogleSheetsClient() {
 
 export async function POST(req: Request) {
   try {
-    const { email, password, action } = await req.json();
+    const { email, password, action } = (await req.json()) as {
+      email?: string;
+      password?: string;
+      action?: 'login' | 'register';
+    };
 
     // 1. Validate TAMU Email Domain
     if (!email || !email.trim().toLowerCase().endsWith('@tamu.edu')) {
