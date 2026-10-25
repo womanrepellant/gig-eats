@@ -1,37 +1,11 @@
 import { NextResponse } from 'next/server';
-import { google } from 'googleapis';
 import bcrypt from 'bcryptjs';
-
-const SPREADSHEET_ID = process.env.GOOGLE_SHEET_ID;
-
-function getGoogleSheetsClient() {
-  let privateKey = process.env.GOOGLE_PRIVATE_KEY || '';
-
-  // 1. Remove surrounding double/single quotes if present
-  privateKey = privateKey.replace(/^["']|["']$/g, '');
-
-  // 2. Unescape escaped newlines (\n -> actual line break)
-  privateKey = privateKey.replace(/\\n/g, '\n');
-
-  // 3. Ensure header and footer have proper newline formatting
-  if (!privateKey.includes('\n') && privateKey.includes('-----BEGIN PRIVATE KEY-----')) {
-    privateKey = privateKey
-      .replace('-----BEGIN PRIVATE KEY-----', '-----BEGIN PRIVATE KEY-----\n')
-      .replace('-----END PRIVATE KEY-----', '\n-----END PRIVATE KEY-----');
-  }
-
-  const auth = new google.auth.GoogleAuth({
-    credentials: {
-      client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-      private_key: privateKey,
-    },
-    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-  });
-
-  return google.sheets({ version: 'v4', auth });
-}
+import { createTamuSession, sameOrigin } from '@/lib/email-auth';
+import { googleSheets, spreadsheetId } from '@/lib/google-sheets';
 
 export async function POST(req: Request) {
+  if (!sameOrigin(req)) return NextResponse.json({ error: 'Invalid request origin.' }, { status: 403 });
+
   try {
     const { email, password, action } = (await req.json()) as {
       email?: string;
@@ -39,113 +13,58 @@ export async function POST(req: Request) {
       action?: 'login' | 'register';
     };
 
-    if (!email || !email.trim().toLowerCase().endsWith('@tamu.edu')) {
+    if (typeof email !== 'string' || !email.trim().toLowerCase().endsWith('@tamu.edu')) {
       return NextResponse.json(
         { error: 'Registration and login are restricted to @tamu.edu email addresses.' },
-        { status: 400 }
+        { status: 400 },
       );
     }
-
-    if (!password || password.length < 6) {
-      return NextResponse.json(
-        { error: 'Password must be at least 6 characters long.' },
-        { status: 400 }
-      );
+    if (typeof password !== 'string' || password.length < 8 || password.length > 72) {
+      return NextResponse.json({ error: 'Password must be between 8 and 72 characters.' }, { status: 400 });
     }
 
     const cleanEmail = email.trim().toLowerCase();
-    const sheets = getGoogleSheetsClient();
+    const sheets = googleSheets();
+    const id = spreadsheetId();
+    const response = await sheets.spreadsheets.values.get({ spreadsheetId: id, range: 'Sheet1!A:C' });
+    const rows = response.data.values ?? [];
+    const accountIndex = rows.findIndex((row) => typeof row[0] === 'string' && row[0].trim().toLowerCase() === cleanEmail);
+    const account = accountIndex >= 0 ? rows[accountIndex] : undefined;
 
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: SPREADSHEET_ID,
-      range: 'Sheet1!A:C',
-    });
-
-    const rows = response.data.values || [];
-    const userRow = rows.find(
-      (row) => row[0] && row[0].toLowerCase() === cleanEmail
-    );
-
-    // --- REGISTER ---
     if (action === 'register') {
-      if (userRow) {
-        return NextResponse.json(
-          { error: 'An account with this TAMU email already exists. Please log in.' },
-          { status: 400 }
-        );
+      if (account) {
+        return NextResponse.json({ error: 'An account with this TAMU email already exists. Please log in.' }, { status: 400 });
       }
-
-      const hashedPassword = await bcrypt.hash(password, 10);
-      const createdAt = new Date().toISOString();
-
+      const passwordHash = await bcrypt.hash(password, 12);
       await sheets.spreadsheets.values.append({
-        spreadsheetId: SPREADSHEET_ID,
+        spreadsheetId: id,
         range: 'Sheet1!A:C',
-        valueInputOption: 'USER_ENTERED',
-        requestBody: {
-          values: [[cleanEmail, hashedPassword, createdAt]],
-        },
+        valueInputOption: 'RAW',
+        insertDataOption: 'INSERT_ROWS',
+        requestBody: { values: [[cleanEmail, passwordHash, new Date().toISOString()]] },
       });
-
-      const res = NextResponse.json({
-        success: true,
-        message: 'Account created successfully!',
-        user: { name: cleanEmail.split('@')[0], email: cleanEmail },
-      });
-
-      res.cookies.set('tamu_user', cleanEmail, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/',
-        maxAge: 60 * 60 * 24 * 7,
-      });
-
-      return res;
+    } else if (action === 'login') {
+      if (!account || typeof account[1] !== 'string' || !await bcrypt.compare(password, account[1])) {
+        return NextResponse.json({ error: 'Email or password is incorrect.' }, { status: 401 });
+      }
+    } else {
+      return NextResponse.json({ error: 'Invalid action specified.' }, { status: 400 });
     }
 
-    // --- LOGIN ---
-    if (action === 'login') {
-      if (!userRow) {
-        return NextResponse.json(
-          { error: 'No account found with this TAMU email. Please register first.' },
-          { status: 404 }
-        );
-      }
-
-      const storedHashedPassword = userRow[1];
-      const isPasswordValid = await bcrypt.compare(password, storedHashedPassword);
-
-      if (!isPasswordValid) {
-        return NextResponse.json(
-          { error: 'Incorrect password.' },
-          { status: 401 }
-        );
-      }
-
-      const res = NextResponse.json({
-        success: true,
-        message: 'Logged in successfully!',
-        user: { name: cleanEmail.split('@')[0], email: cleanEmail },
-      });
-
-      res.cookies.set('tamu_user', cleanEmail, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/',
-        maxAge: 60 * 60 * 24 * 7,
-      });
-
-      return res;
-    }
-
-    return NextResponse.json({ error: 'Invalid action specified.' }, { status: 400 });
-  } catch (error: any) {
-    console.error('Auth API Error:', error);
-    return NextResponse.json(
-      { error: error.message || 'Internal Server Error' },
-      { status: 500 }
-    );
+    const responseBody = action === 'register'
+      ? { success: true, message: 'Account created successfully!', user: { name: cleanEmail.split('@')[0], email: cleanEmail } }
+      : { success: true, message: 'Logged in successfully!', user: { name: cleanEmail.split('@')[0], email: cleanEmail } };
+    const result = NextResponse.json(responseBody);
+    result.cookies.set('tamu_user', createTamuSession(cleanEmail), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7,
+    });
+    return result;
+  } catch (error) {
+    console.error('Google Sheets auth failure:', error);
+    return NextResponse.json({ error: 'Sign-in is temporarily unavailable. Check the Google Sheets configuration.' }, { status: 503 });
   }
 }

@@ -1,24 +1,11 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
+import { getTamuUser } from '@/lib/email-auth';
 
 async function handleSession() {
-  const cookieStore = await cookies();
-  const userCookie = cookieStore.get('tamu_user');
-
-  if (userCookie?.value) {
-    const email = userCookie.value;
-    return NextResponse.json({
-      configured: true,
-      user: {
-        name: email.includes('@') ? email.split('@')[0] : email,
-        email: email,
-      },
-    });
-  }
-
+  const user = await getTamuUser();
   return NextResponse.json({
     configured: true,
-    user: null,
+    user: user ? { name: user.name, email: user.email } : null,
   });
 }
 
