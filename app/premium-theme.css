@@ -579,7 +579,6 @@ dialog::backdrop { background: #0b0811c9; backdrop-filter: blur(9px); }
   }
 }
 
-
 /* Snaggies: left filters and expanding map */
 
 .map-search .shortcut-row {
@@ -756,26 +755,276 @@ dialog::backdrop { background: #0b0811c9; backdrop-filter: blur(9px); }
   }
 }
 
-/* Playful sea-life illustrations for the monthly seafood collection */
-.theme-page .theme-hero::after { content: none; }
-.theme-page .theme-hero > .theme-fish-art.is-puffer {
+/* GIG_FISH_AND_BEACH_FIX */
+
+.gig-logo {
+  color: #fff3e5;
+  white-space: nowrap;
+  font-size: 27px;
+  font-weight: 750;
+}
+
+.gig-logo span {
+  color: #ffcfac;
+  font-weight: 600 !important;
+}
+
+.theme-page {
+  background: linear-gradient(160deg, #092940, #16687d 70%, #ae8c68);
+  padding: 15px;
+  border-radius: 20px;
+}
+
+.theme-page .theme-hero {
+  position: relative;
+  min-height: 280px;
+  overflow: hidden;
+  background: linear-gradient(110deg, #083c55, #198b96);
+  border: 1px solid #83d8d9;
+  border-radius: 22px;
+}
+
+.theme-page .theme-hero::after {
+  content: none !important;
+  display: none !important;
+}
+
+.theme-page .theme-hero > h2,
+.theme-page .theme-hero > p,
+.theme-page .theme-hero > .theme-kicker,
+.theme-page .theme-hero > .theme-hero-action {
+  position: relative;
+  z-index: 2;
+  max-width: 65%;
+}
+
+.theme-page .pixel-fish,
+.theme-page .theme-minecraft-pufferfish {
   position: absolute;
-  z-index: 0;
-  width: clamp(120px, 17vw, 174px);
-  height: auto;
-  right: clamp(24px, 5vw, 72px);
+  right: 2%;
   top: 50%;
   transform: translateY(-50%);
-  filter: drop-shadow(0 12px 12px #00192366);
+  width: min(28%, 240px);
+  z-index: 1;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 12px 12px #042a3b88);
 }
-.theme-page .theme-kicker,
-.theme-page .theme-hero h2,
-.theme-page .theme-hero p,
-.theme-page .theme-hero-action { position: relative; z-index: 1; }
-.theme-page .theme-hero h2 { max-width: 72%; }
-.theme-page .theme-hero p { max-width: 55%; }
-.theme-fish-art { display: block; overflow: visible; flex: none; image-rendering: pixelated; }
-.theme-card-icon .theme-fish-art { width: 58px; height: 46px; }
+
+.theme-page .theme-heading::before {
+  content: '★';
+  color: #ffb28c;
+  font-size: 32px;
+  transform: rotate(-20deg);
+}
+
+.theme-page .theme-card {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #124052, #166676);
+  border: 1px solid #5ebabb;
+}
+
+.theme-page .theme-card::after {
+  content: '★';
+  position: absolute;
+  right: 4px;
+  top: -22px;
+  font-size: 76px;
+  color: #ffb28c77;
+  pointer-events: none;
+}
+
+.theme-page .theme-card h3 {
+  color: #f1ffff;
+}
+
+.theme-page .theme-card p,
+.theme-page .theme-card small {
+  color: #c9f0ef;
+}
+
+@media (max-width: 760px) {
+  .theme-page .theme-hero > h2,
+  .theme-page .theme-hero > p,
+  .theme-page .theme-hero > .theme-kicker,
+  .theme-page .theme-hero > .theme-hero-action {
+    max-width: 100%;
+  }
+
+  .theme-page .pixel-fish,
+  .theme-page .theme-minecraft-pufferfish {
+    position: relative;
+    right: auto;
+    top: auto;
+    transform: none;
+    width: min(70%, 230px);
+    margin: 20px auto 0;
+    display: block;
+  }
+}
+
+
+/* GIG_EATS_UNDERWATER_SCENE_V1 */
+
+.theme-page {
+  background:
+    radial-gradient(circle at 12% 15%, #84f4fc20, transparent 32%),
+    linear-gradient(165deg, #083954, #0c7188 75%, #ba9871);
+  border-radius: 22px;
+  padding: 15px;
+}
+
+.theme-page .theme-hero {
+  min-height: 335px;
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 70% 10%, #8cfaff35, transparent 35%),
+    linear-gradient(120deg, #073f5c, #128c9e);
+  border: 1px solid #76d3df;
+}
+
+.theme-page .theme-hero::after {
+  display: none !important;
+  content: none !important;
+}
+
+.theme-page .theme-hero > h2,
+.theme-page .theme-hero > p,
+.theme-page .theme-hero > .theme-kicker,
+.theme-page .theme-hero > .theme-hero-action {
+  position: relative;
+  z-index: 2;
+  max-width: 57%;
+}
+
+.gig-sea-fish {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.gig-sea-fish img {
+  position: absolute;
+  image-rendering: pixelated;
+  filter: drop-shadow(5px 10px 5px #00384b50);
+}
+
+.gig-puffer {
+  width: 190px;
+  right: 4%;
+  top: 16%;
+}
+
+.gig-fish.purple {
+  width: 117px;
+  right: 29%;
+  top: 13%;
+}
+
+.gig-fish.red {
+  width: 135px;
+  right: 4%;
+  bottom: 4%;
+}
+
+.gig-fish.cod {
+  width: 117px;
+  right: 30%;
+  bottom: 6%;
+}
+
+.gig-starfish {
+  position: absolute;
+  bottom: 12px;
+  right: 47%;
+  font-size: 42px;
+  color: #ffb48d;
+  transform: rotate(-18deg);
+}
+
+.gig-bubbles {
+  position: absolute;
+  right: 17%;
+  top: 5%;
+  color: #cbfbff;
+  font-size: 30px;
+  letter-spacing: 12px;
+  opacity: .65;
+}
+
+.theme-page .theme-heading::before {
+  content: "★";
+  font-size: 28px;
+  color: #ffb58b;
+}
+
+.theme-page .theme-card {
+  background: linear-gradient(145deg, #124254, #176c7e);
+  border: 1px solid #65bfca;
+}
+
+@media (max-width: 760px) {
+  .theme-page .theme-hero {
+    min-height: 495px;
+  }
+
+  .theme-page .theme-hero > h2,
+  .theme-page .theme-hero > p,
+  .theme-page .theme-hero > .theme-kicker,
+  .theme-page .theme-hero > .theme-hero-action {
+    max-width: 100%;
+  }
+
+  .gig-sea-fish {
+    top: auto;
+    height: 190px;
+  }
+
+  .gig-puffer {
+    width: 135px;
+    right: 3%;
+    top: 15px;
+  }
+
+  .gig-fish.purple {
+    width: 86px;
+    right: 47%;
+    top: 8px;
+  }
+
+  .gig-fish.red {
+    width: 98px;
+    right: 30%;
+    bottom: 0;
+  }
+
+  .gig-fish.cod {
+    width: 80px;
+    right: 66%;
+    bottom: 7px;
+  }
+}
+
+/* Simple, front-facing pixel fish for the monthly seafood theme */
+.theme-fish-art { display: block; flex: none; image-rendering: pixelated; }
+.theme-page .theme-hero > .theme-fish-art.is-puffer {
+  position: absolute;
+  z-index: 1;
+  width: clamp(130px, 18vw, 190px);
+  height: auto;
+  right: 4%;
+  top: 50%;
+  transform: translateY(-50%);
+  filter: drop-shadow(5px 10px 5px #00384b50);
+}
+.theme-page .theme-hero > .theme-kicker,
+.theme-page .theme-hero > h2,
+.theme-page .theme-hero > p,
+.theme-page .theme-hero > .theme-hero-action { position: relative; z-index: 2; }
+.theme-page .theme-card-icon { display: grid; place-items: center; }
+.theme-card-icon .theme-fish-art { width: 58px; height: 58px; }
 .theme-fish-float {
   transform-box: fill-box;
   transform-origin: center;
@@ -787,16 +1036,15 @@ dialog::backdrop { background: #0b0811c9; backdrop-filter: blur(9px); }
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-1px); }
 }
-@media (max-width: 600px) {
+@media (max-width: 760px) {
+  .theme-page .theme-hero { min-height: 335px; }
   .theme-page .theme-hero > .theme-fish-art.is-puffer {
-    width: 104px;
-    right: 10px;
-    top: 22px;
-    opacity: .34;
+    width: 112px;
+    right: 8px;
+    top: 18px;
+    opacity: .38;
     transform: none;
   }
-  .theme-page .theme-hero h2 { max-width: 78%; }
-  .theme-page .theme-hero p { max-width: 82%; }
 }
 @media (prefers-reduced-motion: reduce) {
   .theme-fish-float { animation: none; }

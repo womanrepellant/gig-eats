@@ -10,7 +10,7 @@ Updated: 2026-10-25
 - Supabase route/data code, schema, environment references, and unused Supabase Auth endpoints have been removed from the Next.js runtime.
 - Session cookies are HMAC-signed and HttpOnly; signature key uses `SESSION_SECRET` when set, otherwise `GOOGLE_PRIVATE_KEY`. Legacy unsigned cookies will require a new login.
 - No production Google spreadsheet has been queried or changed from this session. Local credentials and a Vercel CLI/connector are absent; live spreadsheet operations and preview deployment remain unverified. The previous Supabase project was not modified. Existing Supabase reviews/bookmarks, if any, have not been migrated.
-- Base commit: `ae2568d2`; the branch was rebased onto `origin/main` at `2cc99304`. Candidate implementation and follow-up commits are on branch `codex/google-sheets-storage`, pushed to origin; no PR or production merge was created.
+- The fish feature and follow-up commits are on `codex/google-sheets-storage`, pushed to origin. Pull request #5 is open; it has not been merged or deployed to production.
 
 ## Latest UI change
 
@@ -26,6 +26,12 @@ Updated: 2026-10-25
 - CSS enables pixelated rendering and the bob animation is restricted to a one-pixel vertical movement so the square edges remain crisp. Reduced-motion handling remains in place.
 - Local preview visually confirmed the blocky puffer and fish on the featured cards. After this refinement, `pnpm check` passed and `pnpm exec next build --webpack` passed, including its TypeScript stage and static page generation. Local Node v26.12.1 emits the expected package engine warning because the project targets Node 22.x.
 - `git diff --check` passed. Commit `119dd8c6` (`Simplify monthly theme fish illustrations`) was pushed to `origin/codex/google-sheets-storage`.
+
+## Pull request conflict resolution
+
+- PR #5 reported conflicts in `app/discover.tsx` and `app/premium-theme.css` against a newer `main` that includes the Gig ’eats branding, updated seafood selection and ratings, and an underwater theme treatment.
+- Merging `origin/main` at `00747815` into the feature branch. The newer main version is retained, and the simple inline pixel puffer and fish are reapplied to its Monthly Themes hero and featured restaurant cards. Existing map, restaurant, rating, and backend changes from main are preserved.
+- Conflict markers have been removed from the two source files. TypeScript (`pnpm check`) and `pnpm exec next build --webpack` both pass after the merge; the build generated all 10 static pages and listed the expected dynamic API routes. `git diff --cached --check` passes. The merge is ready to commit and push to update PR #5.
 
 ## Changes made
 
