@@ -14,7 +14,7 @@ Updated: 2026-10-25
 
 ## Latest UI change
 
-- Added an inline vector pufferfish to the Monthly Themes hero and a coordinated, colored fish illustration to each featured restaurant card. The fish bob gently; `prefers-reduced-motion` disables the animation.
+- Commit `97ee132d` (`Add playful fish to monthly theme`) adds an inline vector pufferfish to the Monthly Themes hero and a coordinated, colored fish illustration to each featured restaurant card. The fish bob gently; `prefers-reduced-motion` disables the animation.
 - Local browser preview showed the pufferfish and restaurant fish; DOM verification found 4 featured cards and 4 card illustrations.
 - `pnpm check` and the production webpack build passed after this change.
 - `pnpm test` now fails on a pre-existing catalog assertion (`scripts/check-catalog.mjs:7` expects every budget to be null; current rebased catalog includes a `$22` value). This is unrelated to the fish UI.
