@@ -3,6 +3,7 @@ import {useCallback,useEffect,useMemo,useRef,useState,type FormEvent,type ReactN
 import {Utensils,Bookmark,Search,MapPin,ChevronDown,ArrowUpRight,ArrowRight,Plus,Star,SlidersHorizontal,Map,List,X,Check,Coffee,Fish,GraduationCap,LocateFixed,ExternalLink,Trash2,CheckCircle2,Info,LogOut,Mail,ArrowLeft,BookOpen,Phone} from "lucide-react";
 import SpotMap from "./spot-map";
 import {restaurants,CAMPUS,miles,type Restaurant,type PublicReview,type Spot} from "./data";
+
 type RatingStats=Record<string,{n:number;avg:number|null;spend:number|null}>;
 type MonthlySpot={restaurantId:string;n:number;avg:number};
 type User={name:string;email:string;eligible:true}|null;
@@ -13,21 +14,27 @@ const TYPES=[...new Set(restaurants.map(r=>r.type))].sort();
 const DIETS=["Vegetarian options","Gluten-free options","Vegan options","Halal options","Kosher options"];
 const SHORTCUTS=[{id:"all",label:"All spots"},{id:"mexican",label:"Mexican"},{id:"coffee",label:"Coffee & sweets"},{id:"pizza",label:"Pizza"}];
 const FEATURED_IDS=["coco-shrimp","fish-daddys","poches-seafood-shoppe-restaurant","crawfish-hole"] as const;
+
 function Dialog({children,onClose,label,wide=false}:{children:ReactNode;onClose:()=>void;label:string;wide?:boolean}){const ref=useRef<HTMLDialogElement>(null);useEffect(()=>{const el=ref.current;el?.showModal();const old=document.body.style.overflow;document.body.style.overflow="hidden";return()=>{el?.close();document.body.style.overflow=old}},[]);return <dialog ref={ref} className={`dialog ${wide?"wide":""}`} aria-label={label} onCancel={onClose} onClick={e=>{if(e.target===e.currentTarget)onClose()}}><button className="dialog-close icon-button" onClick={onClose} aria-label="Close dialog"><X size={20}/></button>{children}</dialog>}
 function CuisineIcon({type,size=22}:{type:string;size?:number}){return /coffee|dessert|breakfast/i.test(type)?<Coffee size={size}/>:/seafood|sushi/i.test(type)?<Fish size={size}/>:<Utensils size={size}/>}
+
 export default function Discover(){
  const[page,setPage]=useState<"explore"|"saved"|"theme"|"top"|"reviews"|"login">("explore"),[query,setQuery]=useState(""),[filters,setFilters]=useState<Filters>(INITIAL),[quick,setQuick]=useState("all"),[showMap,setShowMap]=useState(true),[sort,setSort]=useState("distance"),[savedType,setSavedType]=useState("all"),[modal,setModal]=useState<Modal>(null),[selected,setSelected]=useState<string|null>(null),[origin,setOrigin]=useState(CAMPUS),[originName,setOriginName]=useState("Texas A&M"),[geoBusy,setGeoBusy]=useState(false);
  const[stats,setStats]=useState<RatingStats>({}),[reviewLoading,setReviewLoading]=useState(false),[reviewError,setReviewError]=useState(""),[reviewPage,setReviewPage]=useState<{id:string;next:number;more:boolean}>({id:"",next:0,more:false});
  const[monthly,setMonthly]=useState<MonthlySpot[]>([]),[month,setMonth]=useState(""),[myReviews,setMyReviews]=useState<PublicReview[]>([]),[reviewTarget,setReviewTarget]=useState(""),[user,setUser]=useState<User>(null),[authReady,setAuthReady]=useState(false),[reviews,setReviews]=useState<PublicReview[]>([]),[saved,setSaved]=useState<Spot[]>([]),[loaded,setLoaded]=useState(false),[loadError,setLoadError]=useState(""),[busy,setBusy]=useState(false),[toast,setToast]=useState(""),[listLimit,setListLimit]=useState(24);
  const afterAuth=useRef<(()=>Promise<void>)|null>(null),authReturn=useRef<Modal>(null),toastTimer=useRef<ReturnType<typeof setTimeout>|null>(null),listPanel=useRef<HTMLDivElement>(null);
  const notify=useCallback((text:string)=>{setToast(text);if(toastTimer.current)clearTimeout(toastTimer.current);toastTimer.current=setTimeout(()=>setToast(""),4500)},[]);
+ 
  const refreshSession=useCallback(async()=>{const r=await fetch("/api/auth/session",{method:"POST"});const d=await r.json() as{user:{name:string;email:string}|null;configured:boolean;error?:string};if(!r.ok)throw Error(d.error||"Sign-in is temporarily unavailable.");setUser(d.user?{...d.user,eligible:true}:null);setAuthReady(d.configured);return d.user},[]);
  const loadState=useCallback(async()=>{try{const r=await fetch("/api/state",{cache:"no-store"});const d=await r.json() as{error:string;reviews:PublicReview[];spots:Spot[];stats:RatingStats;monthly:MonthlySpot[];month:string;ownReviews:PublicReview[]};if(!r.ok)throw Error(d.error);setReviews(d.reviews);setSaved(d.spots);setStats(d.stats);setMonthly(d.monthly||[]);setMonth(d.month||"");setMyReviews(d.ownReviews||[]);setLoadError("");setLoaded(true)}catch(e){setLoadError(e instanceof Error?e.message:"Could not load reviews.");setLoaded(true)}},[]);
+ 
  useEffect(()=>{void refreshSession().catch(()=>{}).finally(()=>void loadState());const timer=setInterval(()=>void refreshSession().catch(()=>{}),10*60*1000);const monthlyTimer=setInterval(()=>void loadState(),60*60*1000);return()=>{clearInterval(timer);clearInterval(monthlyTimer);if(toastTimer.current)clearTimeout(toastTimer.current)}},[refreshSession,loadState]);
  useEffect(()=>{const id=new URLSearchParams(window.location.search).get("spot");if(restaurants.some(r=>r.id===id)){setModal({kind:"detail",id:id!});setSelected(id)}},[]);
+ 
  const loadReviews=useCallback(async(id:string,offset=0,signal?:AbortSignal)=>{setReviewLoading(true);setReviewError("");try{const response=await fetch(`/api/reviews?restaurantId=${encodeURIComponent(id)}&offset=${offset}`,{signal,cache:"no-store"});const data=await response.json() as {reviews:PublicReview[];hasMore:boolean;nextOffset:number;error?:string};if(!response.ok)throw Error(data.error||"Could not load reviews.");if(signal?.aborted)return;setReviews(old=>{const existing=offset?old:old.filter(r=>r.restaurantId!==id);const merged=new globalThis.Map(existing.map(r=>[r.id,r]));for(const r of data.reviews)merged.set(r.id,r);return [...merged.values()]});setReviewPage({id,next:data.nextOffset,more:data.hasMore})}catch(e){if(!signal?.aborted)setReviewError(e instanceof Error?e.message:"Could not load reviews.")}finally{if(!signal?.aborted)setReviewLoading(false)}},[]);
  const reviewRestaurant=modal&&(modal.kind==="detail"||modal.kind==="review")?modal.id:"";
  useEffect(()=>{if(!reviewRestaurant||!loaded)return;const controller=new AbortController();void loadReviews(reviewRestaurant,0,controller.signal);return()=>controller.abort()},[reviewRestaurant,modal?.kind,user?.email,loaded,loadReviews]);
+ 
  function score(r:Restaurant){return stats[r.id]?.avg??null}
  function scoreText(r:Restaurant){return score(r)?.toFixed(1)??null}
  function budget(r:Restaurant){return stats[r.id]?.spend??null}
@@ -38,11 +45,40 @@ export default function Discover(){
  function navigate(next:"explore"|"saved"|"theme"|"top"|"reviews"|"login"){setPage(next);clear();setSavedType("all");listPanel.current?.scrollTo({top:0})}
  function open(r:Restaurant){setModal({kind:"detail",id:r.id});setSelected(r.id)}
  function signIn(returnTo:Modal=null){authReturn.current=returnTo;setModal({kind:"auth"})}
+ 
  async function write(path:string,body:unknown,method="POST"){const request=()=>fetch(path,{method,headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});let r=await request();if(r.status===401){const refreshed=await refreshSession();if(refreshed)r=await request()}const d=await r.json() as{error?:string};if(!r.ok)throw Error(d.error||"Could not save your changes.")}
  async function performSave(r:Restaurant,status:"want"|"been"|null){setBusy(true);try{await write("/api/spots",{restaurantId:r.id,status});setSaved(old=>[...old.filter(s=>s.restaurantId!==r.id),...(status?[{restaurantId:r.id,status}]:[])]);notify(status==="want"?"Saved to your want-to-try list":status==="been"?"Marked as been there":"Removed from Saved")}finally{setBusy(false)}}
  async function save(r:Restaurant,status:"want"|"been"|null){if(busy)return;if(!user){afterAuth.current=()=>performSave(r,status);signIn(modal?.kind==="detail"?modal:null);return}if(loadError){notify("Reload your spots before making changes.");return}try{await performSave(r,status)}catch(e){notify(e instanceof Error?e.message:"Could not save spot")}}
  async function removeReview(r:Restaurant){if(busy)return;setBusy(true);try{await write("/api/reviews",{restaurantId:r.id},"DELETE");await loadState();await loadReviews(r.id);notify("Your review was deleted")}catch(e){notify(e instanceof Error?e.message:"Could not delete review")}finally{setBusy(false)}}
- async function signedIn(nextUser:{name:string;email:string}){setUser({...nextUser,eligible:true});await loadState();setModal(authReturn.current);if(!authReturn.current)setPage("reviews");authReturn.current=null;const action=afterAuth.current;afterAuth.current=null;if(action){try{await action()}catch(e){notify(e instanceof Error?e.message:"Could not save spot")}}else notify("You’re signed in. Welcome to Aggie Bites!")}
+ 
+ async function signedIn(nextUser: { name?: string; email: string }) {
+   const displayName = nextUser.name || nextUser.email.split('@')[0];
+   const activeUser = { name: displayName, email: nextUser.email, eligible: true as const };
+   
+   setUser(activeUser);
+   setModal(authReturn.current);
+   
+   if (!authReturn.current) {
+     setPage("reviews");
+   }
+   
+   authReturn.current = null;
+   const action = afterAuth.current;
+   afterAuth.current = null;
+
+   if (action) {
+     try {
+       await action();
+     } catch (e) {
+       notify(e instanceof Error ? e.message : "Could not save spot");
+     }
+   } else {
+     notify("You’re signed in. Welcome to Aggie Bites!");
+   }
+
+   void loadState();
+ }
+
  async function signOut(){try{await write("/api/auth/logout",{});setUser(null);setSaved([]);setMyReviews([]);setModal(null);notify("You’ve signed out")}catch(e){notify(e instanceof Error?e.message:"Could not sign out")}}
  const filtered=restaurants.filter(r=>{const status=saved.find(s=>s.restaurantId===r.id)?.status;if(page==="saved"&&(!status||(savedType!=="all"&&status!==savedType)))return false;if(query&&!`${r.name} ${r.type} ${r.address}`.toLowerCase().includes(query.toLowerCase()))return false;const rating=score(r);if(filters.aggieOnly&&rating===null)return false;if(filters.minStars>0&&(rating===null||rating<filters.minStars))return false;if(miles(origin,r)>filters.radius)return false;const price=budget(r);if(filters.prices.length&&(price===null?!filters.unknownPrice:!filters.prices.includes(priceBand(price))))return false;if(filters.cuisines.length&&!filters.cuisines.includes(r.type))return false;if(filters.dietary.length&&!filters.dietary.every(d=>r.dietary.includes(d)))return false;if(filters.menuOnly&&!r.menuUrl)return false;if(quick==="mexican"&&!/Mexican/.test(r.type))return false;if(quick==="coffee"&&!/Coffee|Desserts/.test(r.type))return false;if(quick==="pizza"&&r.type!=="Pizza")return false;return true}).sort((a,b)=>sort==="rating"?(score(b)??-1)-(score(a)??-1)||miles(origin,a)-miles(origin,b):sort==="price"?(budget(a)??Infinity)-(budget(b)??Infinity)||miles(origin,a)-miles(origin,b):sort==="name"?a.name.localeCompare(b.name):miles(origin,a)-miles(origin,b));
  const resultKey=filtered.map(r=>r.id).join("|");useEffect(()=>{setListLimit(24);listPanel.current?.scrollTo({top:0})},[resultKey]);
@@ -53,17 +89,8 @@ export default function Discover(){
  const monthLabel=month?new Date(`${month}-01T12:00:00Z`).toLocaleString("en-US",{month:"long",year:"numeric",timeZone:"UTC"}):"This month";
  const ratedSeafood=restaurants.filter(r=>/seafood/i.test(r.type)&&score(r)!==null).sort((a,b)=>(score(b)??0)-(score(a)??0)||(stats[b.id]?.n??0)-(stats[a.id]?.n??0));
  const seafoodPicks=ratedSeafood.length?ratedSeafood.slice(0,6):FEATURED_IDS.map(id=>restaurants.find(r=>r.id===id)).filter((r):r is Restaurant=>!!r);
- return <div className="app-shell map-app"><header className="header"><div className="header-inner"><button className=<button
-  className="brand"
-  onClick={() => navigate("explore")}
-  aria-label="Snaggies home"
->
-  <img
-    src="/snaggies-logo.png"
-    alt="Snaggies"
-    className="snaggies-logo"
-  />
-</button> onClick={()=>navigate("explore")} aria-label="Aggie Bites home"><span className="brand-icon"><Utensils size={23}/></span><span>aggie<span>bites</span><b>.</b></span></button><nav aria-label="Main navigation"><button className={page==="explore"?"active":""} onClick={()=>navigate("explore")}>Map</button><button className={page==="top"?"active":""} onClick={()=>navigate("top")}>Top Recommended</button><button className={page==="theme"?"active":""} onClick={()=>navigate("theme")}>Monthly Themes</button><button className={page==="reviews"?"active":""} onClick={()=>navigate(user?"reviews":"login")}>{user?"Your Reviews":"Login"}</button></nav></div></header>
+
+ return <div className="app-shell map-app"><header className="header"><div className="header-inner"><button className="brand" onClick={()=>navigate("explore")} aria-label="Aggie Bites home"><span className="brand-icon"><Utensils size={23}/></span><span>aggie<span>bites</span><b>.</b></span></button><nav aria-label="Main navigation"><button className={page==="explore"?"active":""} onClick={()=>navigate("explore")}>Map</button><button className={page==="top"?"active":""} onClick={()=>navigate("top")}>Top Recommended</button><button className={page==="theme"?"active":""} onClick={()=>navigate("theme")}>Monthly Themes</button><button className={page==="reviews"?"active":""} onClick={()=>navigate(user?"reviews":"login")}>{user?"Your Reviews":"Login"}</button></nav></div></header>
  <main className={`main map-main ${showMap?"map-mode":"list-mode"}`}><section className="explorer-intro"><div><h1>{page==="saved"?"Your next bite, saved.":page==="theme"?"See-food is here.":page==="top"?"Top Recommended":page==="reviews"?"Your Reviews":page==="login"?"Login":"Find your next bite."}</h1><p>{restaurants.length} restaurants, cafés & sweet spots around College Station.</p></div>{(page==="explore"||page==="saved")&&<button className="location-button" onClick={()=>setModal({kind:"location"})}><MapPin size={15}/> Near {originName}<ChevronDown size={13}/></button>}</section>
  {page==="theme"&&<section className="theme-page" aria-label="Monthly theme"><div className="theme-hero"><span className="theme-kicker"><Fish size={16}/> {monthLabel.toUpperCase()} · SEAFOOD</span><h2>This month’s theme is see-food.</h2><p>A little ocean air for your next meal. Explore seafood spots around College Station and check their menus.</p><button className="theme-hero-action" onClick={()=>{navigate("explore");setQuick("all");setFilters({...INITIAL,cuisines:["Seafood","Steaks & seafood"]})}}>See all seafood spots <ArrowRight size={16}/></button></div><div className="theme-heading"><h2>Featured restaurants</h2><span>{ratedSeafood.length?"Highest Aggie-rated seafood spots":"Featured seafood picks · awaiting Aggie ratings"}</span></div><div className="theme-grid">{seafoodPicks.map(r=><article className="theme-card" key={r.id}><span className="theme-card-icon"><CuisineIcon type={r.type} size={28}/></span><div><small>{r.type} · {miles(origin,r).toFixed(1)} mi from {originName}</small><h3>{r.name}</h3><p>{r.address}</p><div className="theme-card-actions"><button onClick={()=>open(r)}>See restaurant <ArrowRight size={15}/></button><a href={r.menuUrl||r.website||r.sourceUrl} target="_blank" rel="noreferrer">Menu <ArrowUpRight size={13}/></a></div></div></article>)}</div><p className="theme-footer">A monthly collection, not a claim about current specials or availability.</p></section>}{page==="top"&&<section className="feature-page" aria-label="Top Recommended"><p className="feature-intro">The 10 highest average Aggie ratings from reviews posted in {monthLabel}. Ties favor more ratings. The list updates automatically as the month changes.</p>{monthly.length?<div className="feature-list">{monthly.map((entry,i)=>{const r=restaurants.find(item=>item.id===entry.restaurantId);return r?<button key={r.id} className="feature-row" onClick={()=>open(r)}><span className="feature-rank">{String(i+1).padStart(2,"0")}</span><span className="feature-name"><strong>{r.name}</strong><small>{r.type} · {r.address}</small></span><span className="feature-score"><Star size={17} fill="currentColor"/> {Number(entry.avg).toFixed(1)} <small>({entry.n})</small></span><ArrowRight size={17}/></button>:null})}</div>:<div className="feature-empty"><Star size={28}/><h2>No ratings yet this month.</h2><p>Once verified Aggies review places, the top ten will appear here.</p><button className="primary" onClick={()=>user?navigate("reviews"):signIn()}>Write a review <ArrowRight size={16}/></button></div>}</section>}
  {page==="login"&&<section className="feature-page login-page" aria-label="Login"><EmailSignIn configured={authReady} onComplete={signedIn}/></section>}
@@ -85,17 +112,244 @@ export default function Discover(){
  </Dialog>}
  </div>
 }
-function EmailSignIn({configured,onComplete}:{configured:boolean;onComplete:(u:{name:string;email:string})=>Promise<void>}) {
- const[email,setEmail]=useState(""),[password,setPassword]=useState(""),[mode,setMode]=useState<"login"|"signup">("login"),[busy,setBusy]=useState(false),[error,setError]=useState(""),[notice,setNotice]=useState("");
- async function submit(e:FormEvent){e.preventDefault();setError("");setNotice("");const normalized=email.trim().toLowerCase();if(!/^[^\s@]+@tamu\.edu$/.test(normalized)){setError("Use your @tamu.edu email address.");return}setBusy(true);try{const r=await fetch("/api/auth/password",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:normalized,password,mode})});const d=await r.json() as {error?:string;message?:string;user?:{name:string;email:string}};if(!r.ok)throw Error(d.error||"Could not continue.");if(d.user)await onComplete(d.user);else{setNotice(d.message||"Check your inbox to verify your email.");setMode("login");setPassword("")}}catch(e){setError(e instanceof Error?e.message:"Could not continue.")}finally{setBusy(false)}}
- return <div className="modal-padding email-sign-in"><span className="modal-symbol"><Mail size={28}/></span><p className="eyebrow">TEXAS A&amp;M COMMUNITY</p><h2>{mode==="login"?"Howdy, Aggie.":"Create your account."}</h2><p>Use a verified @tamu.edu email to share reviews and save spots.</p><div className="auth-switch"><button className={mode==="login"?"chosen":""} onClick={()=>{setMode("login");setError("")}}>Login</button><button className={mode==="signup"?"chosen":""} onClick={()=>{setMode("signup");setError("")}}>Create account</button></div><form onSubmit={e=>void submit(e)}><label>TAMU email<input autoFocus type="email" autoComplete="email" required maxLength={254} placeholder="you@tamu.edu" value={email} onChange={e=>setEmail(e.target.value)} disabled={busy}/></label><label>Password<input type="password" autoComplete={mode==="login"?"current-password":"new-password"} required minLength={8} maxLength={72} value={password} onChange={e=>setPassword(e.target.value)} disabled={busy} placeholder="At least 8 characters"/></label>{error&&<p className="form-error" role="alert">{error}</p>}{notice&&<p className="setup-notice" role="status">{notice}</p>}{!configured&&<div className="setup-notice"><Info size={18}/><p>New accounts are paused until TAMU email delivery is configured. Existing verified accounts can still try logging in.</p></div>}<button className="primary" type="submit" disabled={busy||(mode==="signup"&&!configured)}>{busy?"Please wait…":mode==="login"?"Login":"Create account"}<ArrowRight size={16}/></button></form><p className="sign-in-fineprint">No ChatGPT account needed. Confirm your TAMU inbox to activate a new account.</p></div>;
+
+function EmailSignIn({
+  configured,
+  onComplete,
+}: {
+  configured: boolean;
+  onComplete: (u: { name: string; email: string }) => Promise<void>;
+}) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    setError("");
+    setNotice("");
+
+    const normalized = email.trim().toLowerCase();
+
+    if (!normalized.endsWith("@tamu.edu")) {
+      setError("Please use a valid @tamu.edu email address.");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long.");
+      return;
+    }
+
+    setBusy(true);
+
+    try {
+      const r = await fetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: normalized,
+          password,
+          action: mode === "signup" ? "register" : "login",
+        }),
+      });
+
+      const d = (await r.json()) as {
+        error?: string;
+        message?: string;
+        user?: { email: string };
+      };
+
+      if (!r.ok) throw Error(d.error || "Authentication failed");
+
+      if (d.user) {
+        await onComplete({ name: d.user.email.split("@")[0], email: d.user.email });
+      } else if (d.message) {
+        setNotice(d.message);
+        setMode("login");
+        setPassword("");
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not continue.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="modal-padding email-sign-in">
+      <span className="modal-symbol">
+        <Mail size={28} />
+      </span>
+      <p className="eyebrow">TEXAS A&amp;M COMMUNITY</p>
+      <h2>{mode === "login" ? "Howdy, Aggie." : "Create your account."}</h2>
+      <p>Use a verified @tamu.edu email to share reviews and save spots.</p>
+
+      <div className="auth-switch">
+        <button
+          type="button"
+          className={mode === "login" ? "chosen" : ""}
+          onClick={() => {
+            setMode("login");
+            setError("");
+            setNotice("");
+          }}
+        >
+          Login
+        </button>
+        <button
+          type="button"
+          className={mode === "signup" ? "chosen" : ""}
+          onClick={() => {
+            setMode("signup");
+            setError("");
+            setNotice("");
+          }}
+        >
+          Create account
+        </button>
+      </div>
+
+      <form onSubmit={(e) => void submit(e)}>
+        <label>
+          TAMU email
+          <input
+            autoFocus
+            type="email"
+            autoComplete="email"
+            required
+            maxLength={254}
+            placeholder="you@tamu.edu"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={busy}
+          />
+        </label>
+        <label>
+          Password
+          <input
+            type="password"
+            autoComplete={mode === "login" ? "current-password" : "new-password"}
+            required
+            minLength={6}
+            maxLength={72}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            disabled={busy}
+            placeholder="At least 6 characters"
+          />
+        </label>
+
+        {error && (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        )}
+        {notice && (
+          <p className="setup-notice" role="status">
+            {notice}
+          </p>
+        )}
+
+        <button className="primary" type="submit" disabled={busy}>
+          {busy ? "Please wait…" : mode === "login" ? "Login" : "Create account"}
+          <ArrowRight size={16} />
+        </button>
+      </form>
+    </div>
+  );
 }
+
 type ReviewData={restaurantId:string;author:string;rating:number;dish:string;body:string;spend:number;visitedAt:string};
 function ReviewForm({user,initialId,existing,busy,onAccount,onSubmit}:{user:User;initialId:string;existing:PublicReview[];busy:boolean;onAccount:()=>void;onSubmit:(d:ReviewData)=>Promise<void>}) {
-  const [id,setId]=useState(initialId),[rating,setRating]=useState(0),[author,setAuthor]=useState(user?.name==="Fellow foodie"?"":user?.name??""),[dish,setDish]=useState(""),[body,setBody]=useState(""),[spend,setSpend]=useState(""),[date,setDate]=useState(new Date().toISOString().slice(0,10)),[error,setError]=useState("");
+  const [id,setId]=useState(initialId),[rating,setRating]=useState(0),[author,setAuthor]=useState(user?.name==="Fellow foodie"?"":user?.name??""),[dish,setDish]=useState(""),[body,setBody]=useState(""),[spend,setSpend]=useState(""),[date,setDate]=useState(new Date().toISOString().slice(0,10)),[error,setError]=setError("");
   const own=existing.find(r=>r.restaurantId===id&&r.own);
   useEffect(()=>{setRating(own?.rating??0);setDish(own?.dish??"");setBody(own?.body??"");setSpend(own?String(own.spend):"");setDate(own?.visitedAt??new Date().toISOString().slice(0,10));if(own)setAuthor(own.author)},[id,own]);
-  async function submit(e:FormEvent){e.preventDefault();if(!user?.eligible){onAccount();return}if(!rating){setError("Choose a star rating before posting.");return}setError("");try{await onSubmit({restaurantId:id,author,rating,dish,body,spend:+spend,visitedAt:date})}catch(e){setError(e instanceof Error?e.message:"Could not save your review.")}}
-  if(!user)return <div className="modal-padding auth-prompt"><GraduationCap size={32}/><h2>Share your take.</h2><p>Verify your @tamu.edu email before writing a review.</p><button className="primary" onClick={onAccount}>Sign in with TAMU <ArrowRight size={16}/></button></div>;
-  return <div className="modal-padding review-form-wrap"><span className="eyebrow">YOUR TASTE. YOUR TAKE.</span><h2>{own?"A fresh take on your bite.":"How was your last bite?"}</h2><p>Help another Aggie find something good.</p><form onSubmit={submit}><label>The spot<select required value={id} onChange={e=>setId(e.target.value)}><option value="" disabled>Choose a restaurant</option>{restaurants.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}</select></label><fieldset className="star-field"><legend>Your overall rating</legend><div>{[1,2,3,4,5].map(n=><button key={n} type="button" aria-label={`Rate ${n} star${n>1?"s":""}`} aria-pressed={rating===n} onClick={()=>setRating(n)}><Star size={32} fill={n<=rating?"currentColor":"none"}/></button>)}<span>{["Pick your stars","Not my bite","Could be better","Pretty good","Loved it","A new favorite"][rating]}</span></div></fieldset><label>Public display name<input required minLength={2} maxLength={40} value={author} onChange={e=>setAuthor(e.target.value)} placeholder="How should we credit you?"/></label><label>What did you order?<input required maxLength={100} value={dish} onChange={e=>setDish(e.target.value)} placeholder="The dish you came for (or came back for)"/></label><div className="form-row"><label>Spend per person ($)<input type="number" required min="1" max="500" step="1" value={spend} onChange={e=>setSpend(e.target.value)} placeholder="15"/></label><label>Visit date<input type="date" required max={new Date().toISOString().slice(0,10)} value={date} onChange={e=>setDate(e.target.value)}/></label></div><label>Your take<textarea required minLength={10} maxLength={1500} rows={4} value={body} onChange={e=>setBody(e.target.value)} placeholder="What was great? Anything you’d tell a friend before they go?"/><span className="character-count">{body.length}/1500</span></label>{error&&<p role="alert" className="form-error">{error}</p>}{!user?.eligible&&<div className="review-gate"><GraduationCap size={20}/><p>{user?"Verify your @tamu.edu email to post a review.":"Sign in with your @tamu.edu email to publish a review."}</p></div>}<button className="primary submit-review" type={user?.eligible?"submit":"button"} onClick={!user?.eligible?onAccount:undefined} disabled={busy}>{busy?"Saving your review…":user?.eligible?own?"Update my review":"Post my review":"Sign in with TAMU"}<ArrowRight size={16}/></button><p className="filter-note">One editable rating per account per spot. Keep it honest, helpful, and about your own experience.</p></form></div>;
+  
+  async function submit(e:FormEvent){
+    e.preventDefault();
+    if(!user){
+      onAccount();
+      return;
+    }
+    if(!rating){
+      setError("Choose a star rating before posting.");
+      return;
+    }
+    setError("");
+    try{
+      await onSubmit({restaurantId:id,author,rating,dish,body,spend:+spend,visitedAt:date});
+    }catch(e){
+      setError(e instanceof Error?e.message:"Could not save your review.");
+    }
+  }
+
+  if(!user) return (
+    <div className="modal-padding auth-prompt">
+      <GraduationCap size={32}/>
+      <h2>Share your take.</h2>
+      <p>Verify your @tamu.edu email before writing a review.</p>
+      <button className="primary" onClick={onAccount}>Sign in with TAMU <ArrowRight size={16}/></button>
+    </div>
+  );
+
+  return (
+    <div className="modal-padding review-form-wrap">
+      <span className="eyebrow">YOUR TASTE. YOUR TAKE.</span>
+      <h2>{own?"A fresh take on your bite.":"How was your last bite?"}</h2>
+      <p>Help another Aggie find something good.</p>
+      <form onSubmit={submit}>
+        <label>
+          The spot
+          <select required value={id} onChange={e=>setId(e.target.value)}>
+            <option value="" disabled>Choose a restaurant</option>
+            {restaurants.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}
+          </select>
+        </label>
+        <fieldset className="star-field">
+          <legend>Your overall rating</legend>
+          <div>
+            {[1,2,3,4,5].map(n=>(
+              <button key={n} type="button" aria-label={`Rate ${n} star${n>1?"s":""}`} aria-pressed={rating===n} onClick={()=>setRating(n)}>
+                <Star size={32} fill={n<=rating?"currentColor":"none"}/>
+              </button>
+            ))}
+            <span>{["Pick your stars","Not my bite","Could be better","Pretty good","Loved it","A new favorite"][rating]}</span>
+          </div>
+        </fieldset>
+        <label>
+          Public display name
+          <input required minLength={2} maxLength={40} value={author} onChange={e=>setAuthor(e.target.value)} placeholder="How should we credit you?"/>
+        </label>
+        <label>
+          What did you order?
+          <input required maxLength={100} value={dish} onChange={e=>setDish(e.target.value)} placeholder="The dish you came for (or came back for)"/>
+        </label>
+        <div className="form-row">
+          <label>
+            Spend per person ($)
+            <input type="number" required min="1" max="500" step="1" value={spend} onChange={e=>setSpend(e.target.value)} placeholder="15"/>
+          </label>
+          <label>
+            Visit date
+            <input type="date" required max={new Date().toISOString().slice(0,10)} value={date} onChange={e=>setDate(e.target.value)}/>
+          </label>
+        </div>
+        <label>
+          Your take
+          <textarea required minLength={10} maxLength={1500} rows={4} value={body} onChange={e=>setBody(e.target.value)} placeholder="What was great? Anything you’d tell a friend before they go?"/>
+          <span className="character-count">{body.length}/1500</span>
+        </label>
+        {error&&<p role="alert" className="form-error">{error}</p>}
+        <button className="primary submit-review" type="submit" disabled={busy}>
+          {busy?"Saving your review…":own?"Update my review":"Post my review"}
+          <ArrowRight size={16}/>
+        </button>
+        <p className="filter-note">One editable rating per account per spot. Keep it honest, helpful, and about your own experience.</p>
+      </form>
+    </div>
+  );
 }
