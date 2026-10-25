@@ -10,7 +10,7 @@ Updated: 2026-10-25
 - Supabase route/data code, schema, environment references, and unused Supabase Auth endpoints have been removed from the Next.js runtime.
 - Session cookies are HMAC-signed and HttpOnly; signature key uses `SESSION_SECRET` when set, otherwise `GOOGLE_PRIVATE_KEY`. Legacy unsigned cookies will require a new login.
 - No production Google spreadsheet has been queried or changed from this session. Local credentials and a Vercel CLI/connector are absent; live spreadsheet operations and preview deployment remain unverified. The previous Supabase project was not modified. Existing Supabase reviews/bookmarks, if any, have not been migrated.
-- Base commit: `ae2568d2`. Candidate implementation commit: `990a181f` (`Move app storage to Google Sheets`) with status commits `ace00c6f` and `7d30ab8c` on branch `codex/google-sheets-storage`. A final status correction is being recorded now. Branch was pushed to `origin/codex/google-sheets-storage`; no PR or production merge was created.
+- Base commit: `ae2568d2`. Candidate implementation commit: `990a181f` (`Move app storage to Google Sheets`) with status commits on branch `codex/google-sheets-storage`. Branch was pushed to `origin/codex/google-sheets-storage`; no PR or production merge was created.
 
 ## Changes made
 
@@ -54,9 +54,9 @@ Updated: 2026-10-25
 1. Add a testable mock transport or use an authorized test spreadsheet to validate tab initialization and CRUD without changing production account data.
 2. Verify the configured service account can edit the intended spreadsheet and that its existing `Sheet1` has the expected account columns.
 3. If the former Supabase project contains user data, export and map it before production cutover; the old project has been left untouched, but legacy reviews/bookmarks are not copied automatically.
-4. Deploy from a reviewed commit and run a real account/review/bookmark flow on Vercel.
-5. Repo-wide `pnpm lint` reports 13 existing errors in unrelated UI/legal files; changed runtime files pass targeted ESLint. Decide whether to address those existing lint failures before a strict lint gate.
-6. Inspect the Vercel preview for the pushed branch, confirm its environment includes the three Google Sheets variables, then run signup/login/review edit-delete/bookmark checks against a test spreadsheet before production merge.
+4. Inspect the Vercel preview for the pushed branch and confirm its environment includes all three Google Sheets variables.
+5. Run account/review edit-delete/bookmark checks against a test spreadsheet before production merge.
+6. Repo-wide `pnpm lint` reports 13 existing errors in unrelated UI/legal files; changed runtime files pass targeted ESLint. Decide whether to address those existing lint failures before a strict lint gate.
 
 ## Next action
 
