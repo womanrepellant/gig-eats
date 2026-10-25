@@ -3,6 +3,7 @@ import {useCallback,useEffect,useMemo,useRef,useState,type FormEvent,type ReactN
 import {Utensils,Bookmark,Search,MapPin,ChevronDown,ArrowUpRight,ArrowRight,Plus,Star,SlidersHorizontal,Map,List,X,Check,Coffee,Fish,GraduationCap,LocateFixed,ExternalLink,Trash2,CheckCircle2,Info,LogOut,Mail,ArrowLeft,BookOpen,Phone} from "lucide-react";
 import SpotMap from "./spot-map";
 import {restaurants,CAMPUS,miles,type Restaurant,type PublicReview,type Spot} from "./data";
+
 type RatingStats=Record<string,{n:number;avg:number|null;spend:number|null}>;
 type MonthlySpot={restaurantId:string;n:number;avg:number};
 type User={name:string;email:string;eligible:true}|null;
@@ -13,8 +14,10 @@ const TYPES=[...new Set(restaurants.map(r=>r.type))].sort();
 const DIETS=["Vegetarian options","Gluten-free options","Vegan options","Halal options","Kosher options"];
 const SHORTCUTS=[{id:"all",label:"All spots"},{id:"mexican",label:"Mexican"},{id:"coffee",label:"Coffee & sweets"},{id:"pizza",label:"Pizza"}];
 const FEATURED_IDS=["coco-shrimp","fish-daddys","poches-seafood-shoppe-restaurant","crawfish-hole"] as const;
+
 function Dialog({children,onClose,label,wide=false}:{children:ReactNode;onClose:()=>void;label:string;wide?:boolean}){const ref=useRef<HTMLDialogElement>(null);useEffect(()=>{const el=ref.current;el?.showModal();const old=document.body.style.overflow;document.body.style.overflow="hidden";return()=>{el?.close();document.body.style.overflow=old}},[]);return <dialog ref={ref} className={`dialog ${wide?"wide":""}`} aria-label={label} onCancel={onClose} onClick={e=>{if(e.target===e.currentTarget)onClose()}}><button className="dialog-close icon-button" onClick={onClose} aria-label="Close dialog"><X size={20}/></button>{children}</dialog>}
 function CuisineIcon({type,size=22}:{type:string;size?:number}){return /coffee|dessert|breakfast/i.test(type)?<Coffee size={size}/>:/seafood|sushi/i.test(type)?<Fish size={size}/>:<Utensils size={size}/>}
+
 export default function Discover(){
  const[page,setPage]=useState<"explore"|"saved"|"theme"|"top"|"reviews"|"login">("explore"),[query,setQuery]=useState(""),[filters,setFilters]=useState<Filters>(INITIAL),[quick,setQuick]=useState("all"),[showMap,setShowMap]=useState(true),[sort,setSort]=useState("distance"),[savedType,setSavedType]=useState("all"),[modal,setModal]=useState<Modal>(null),[selected,setSelected]=useState<string|null>(null),[origin,setOrigin]=useState(CAMPUS),[originName,setOriginName]=useState("Texas A&M"),[geoBusy,setGeoBusy]=useState(false);
  const[stats,setStats]=useState<RatingStats>({}),[reviewLoading,setReviewLoading]=useState(false),[reviewError,setReviewError]=useState(""),[reviewPage,setReviewPage]=useState<{id:string;next:number;more:boolean}>({id:"",next:0,more:false});
@@ -75,11 +78,158 @@ export default function Discover(){
  </Dialog>}
  </div>
 }
-function EmailSignIn({configured,onComplete}:{configured:boolean;onComplete:(u:{name:string;email:string})=>Promise<void>}) {
- const[email,setEmail]=useState(""),[password,setPassword]=useState(""),[mode,setMode]=useState<"login"|"signup">("login"),[busy,setBusy]=useState(false),[error,setError]=useState(""),[notice,setNotice]=useState("");
- async function submit(e:FormEvent){e.preventDefault();setError("");setNotice("");const normalized=email.trim().toLowerCase();if(!/^[^\s@]+@tamu\.edu$/.test(normalized)){setError("Use your @tamu.edu email address.");return}setBusy(true);try{const r=await fetch("/api/auth/password",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:normalized,password,mode})});const d=await r.json() as {error?:string;message?:string;user?:{name:string;email:string}};if(!r.ok)throw Error(d.error||"Could not continue.");if(d.user)await onComplete(d.user);else{setNotice(d.message||"Check your inbox to verify your email.");setMode("login");setPassword("")}}catch(e){setError(e instanceof Error?e.message:"Could not continue.")}finally{setBusy(false)}}
- return <div className="modal-padding email-sign-in"><span className="modal-symbol"><Mail size={28}/></span><p className="eyebrow">TEXAS A&amp;M COMMUNITY</p><h2>{mode==="login"?"Howdy, Aggie.":"Create your account."}</h2><p>Use a verified @tamu.edu email to share reviews and save spots.</p><div className="auth-switch"><button className={mode==="login"?"chosen":""} onClick={()=>{setMode("login");setError("")}}>Login</button><button className={mode==="signup"?"chosen":""} onClick={()=>{setMode("signup");setError("")}}>Create account</button></div><form onSubmit={e=>void submit(e)}><label>TAMU email<input autoFocus type="email" autoComplete="email" required maxLength={254} placeholder="you@tamu.edu" value={email} onChange={e=>setEmail(e.target.value)} disabled={busy}/></label><label>Password<input type="password" autoComplete={mode==="login"?"current-password":"new-password"} required minLength={8} maxLength={72} value={password} onChange={e=>setPassword(e.target.value)} disabled={busy} placeholder="At least 8 characters"/></label>{error&&<p className="form-error" role="alert">{error}</p>}{notice&&<p className="setup-notice" role="status">{notice}</p>}{!configured&&<div className="setup-notice"><Info size={18}/><p>New accounts are paused until TAMU email delivery is configured. Existing verified accounts can still try logging in.</p></div>}<button className="primary" type="submit" disabled={busy||(mode==="signup"&&!configured)}>{busy?"Please wait…":mode==="login"?"Login":"Create account"}<ArrowRight size={16}/></button></form><p className="sign-in-fineprint">No ChatGPT account needed. Confirm your TAMU inbox to activate a new account.</p></div>;
+
+function EmailSignIn({
+  configured,
+  onComplete,
+}: {
+  configured: boolean;
+  onComplete: (u: { name: string; email: string }) => Promise<void>;
+}) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    setError("");
+    setNotice("");
+
+    const normalized = email.trim().toLowerCase();
+
+    // Validate TAMU email domain
+    if (!normalized.endsWith("@tamu.edu")) {
+      setError("Please use a valid @tamu.edu email address.");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long.");
+      return;
+    }
+
+    setBusy(true);
+
+    try {
+      const r = await fetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: normalized,
+          password,
+          action: mode === "signup" ? "register" : "login",
+        }),
+      });
+
+      const d = (await r.json()) as {
+        error?: string;
+        message?: string;
+        user?: { email: string };
+      };
+
+      if (!r.ok) throw Error(d.error || "Authentication failed");
+
+      if (d.user) {
+        await onComplete({ name: d.user.email.split("@")[0], email: d.user.email });
+      } else if (d.message) {
+        setNotice(d.message);
+        setMode("login");
+        setPassword("");
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not continue.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="modal-padding email-sign-in">
+      <span className="modal-symbol">
+        <Mail size={28} />
+      </span>
+      <p className="eyebrow">TEXAS A&amp;M COMMUNITY</p>
+      <h2>{mode === "login" ? "Howdy, Aggie." : "Create your account."}</h2>
+      <p>Use a verified @tamu.edu email to share reviews and save spots.</p>
+
+      <div className="auth-switch">
+        <button
+          type="button"
+          className={mode === "login" ? "chosen" : ""}
+          onClick={() => {
+            setMode("login");
+            setError("");
+            setNotice("");
+          }}
+        >
+          Login
+        </button>
+        <button
+          type="button"
+          className={mode === "signup" ? "chosen" : ""}
+          onClick={() => {
+            setMode("signup");
+            setError("");
+            setNotice("");
+          }}
+        >
+          Create account
+        </button>
+      </div>
+
+      <form onSubmit={(e) => void submit(e)}>
+        <label>
+          TAMU email
+          <input
+            autoFocus
+            type="email"
+            autoComplete="email"
+            required
+            maxLength={254}
+            placeholder="you@tamu.edu"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={busy}
+          />
+        </label>
+        <label>
+          Password
+          <input
+            type="password"
+            autoComplete={mode === "login" ? "current-password" : "new-password"}
+            required
+            minLength={6}
+            maxLength={72}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            disabled={busy}
+            placeholder="At least 6 characters"
+          />
+        </label>
+
+        {error && (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        )}
+        {notice && (
+          <p className="setup-notice" role="status">
+            {notice}
+          </p>
+        )}
+
+        <button className="primary" type="submit" disabled={busy}>
+          {busy ? "Please wait…" : mode === "login" ? "Login" : "Create account"}
+          <ArrowRight size={16} />
+        </button>
+      </form>
+    </div>
+  );
 }
+
 type ReviewData={restaurantId:string;author:string;rating:number;dish:string;body:string;spend:number;visitedAt:string};
 function ReviewForm({user,initialId,existing,busy,onAccount,onSubmit}:{user:User;initialId:string;existing:PublicReview[];busy:boolean;onAccount:()=>void;onSubmit:(d:ReviewData)=>Promise<void>}) {
   const [id,setId]=useState(initialId),[rating,setRating]=useState(0),[author,setAuthor]=useState(user?.name==="Fellow foodie"?"":user?.name??""),[dish,setDish]=useState(""),[body,setBody]=useState(""),[spend,setSpend]=useState(""),[date,setDate]=useState(new Date().toISOString().slice(0,10)),[error,setError]=useState("");
