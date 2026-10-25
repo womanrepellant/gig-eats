@@ -1,4 +1,4 @@
-import {env} from "cloudflare:workers";
+
 import {restaurants,miles} from "../../data";
 
 export const dynamic="force-dynamic";
@@ -12,7 +12,7 @@ export async function GET(request:Request){
  const restaurant=restaurants.find(r=>r.id===id);
  if(!restaurant)return Response.json({error:"Unknown restaurant"},{status:404,headers});
  const fallback=mapsLink(restaurant.name,restaurant.address);
- const key=(env as unknown as {GOOGLE_PLACES_API_KEY?:string}).GOOGLE_PLACES_API_KEY;
+ const key=process.env.GOOGLE_PLACES_API_KEY;
  if(!key)return Response.json({configured:false,googleMapsUri:fallback,reviews:[]},{headers});
  try{
   const search=await fetch("https://places.googleapis.com/v1/places:searchText",{method:"POST",headers:{"Content-Type":"application/json","X-Goog-Api-Key":key,"X-Goog-FieldMask":"places.id,places.displayName,places.location"},body:JSON.stringify({textQuery:`${restaurant.name} ${restaurant.address}`,pageSize:3,locationBias:{circle:{center:{latitude:restaurant.lat,longitude:restaurant.lng},radius:2000}}})});
