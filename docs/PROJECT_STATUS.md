@@ -25,7 +25,7 @@ Updated: 2026-10-25
 - User asked to make the Monthly Themes illustrations more Minecraft-like, then requested a front-facing puffer and simpler illustrations. The puffer now faces forward with symmetrical square eyes and fins; each featured-restaurant fish is reduced to a basic pixel silhouette with only a few color blocks.
 - CSS enables pixelated rendering and the bob animation is restricted to a one-pixel vertical movement so the square edges remain crisp. Reduced-motion handling remains in place.
 - Local preview visually confirmed the blocky puffer and fish on the featured cards. After this refinement, `pnpm check` passed and `pnpm exec next build --webpack` passed, including its TypeScript stage and static page generation. Local Node v26.12.1 emits the expected package engine warning because the project targets Node 22.x.
-- `git diff --check` passed. Commit and push for this refinement are pending.
+- `git diff --check` passed. Commit `119dd8c6` (`Simplify monthly theme fish illustrations`) was pushed to `origin/codex/google-sheets-storage`.
 
 ## Changes made
 
