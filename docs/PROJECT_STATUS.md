@@ -10,7 +10,7 @@ Updated: 2026-10-25
 - Supabase route/data code, schema, environment references, and unused Supabase Auth endpoints have been removed from the Next.js runtime.
 - Session cookies are HMAC-signed and HttpOnly; signature key uses `SESSION_SECRET` when set, otherwise `GOOGLE_PRIVATE_KEY`. Legacy unsigned cookies will require a new login.
 - No production Google spreadsheet has been queried or changed from this session. Local credentials are absent; live spreadsheet operations and Vercel deployment remain unverified.
-- Latest known committed base: `ae2568d2`. No commit or push has been made for this conversion.
+- Base commit: `ae2568d2`. Candidate implementation commit: `990a181f` (`Move app storage to Google Sheets`) on branch `codex/google-sheets-storage`. It has not been pushed yet.
 
 ## Changes made
 
@@ -43,7 +43,8 @@ Updated: 2026-10-25
 - Targeted ESLint on changed auth/data/API files: passed with no warnings.
 - Session-cookie unit smoke check: 3 assertions passed (normalization, valid signature, forged/unsigned rejection).
 - `pnpm lint`: still fails with 13 errors and 9 warnings in existing unrelated UI/legal files.
-- `git diff --check`: passed at the prior checkpoint; rerun before commit.
+- `git diff --cached --check`: passed before candidate commit.
+- Candidate commit `990a181f` was created after local checks.
 - Before this conversion, `pnpm run build` with Turbopack was blocked in the local sandbox while a CSS worker attempted a local port bind (`Operation not permitted`); an elevated retry had the same result. The reported Vercel export error itself was corrected in the earlier source edit, but that edit was superseded by this full backend conversion.
 - Post-conversion TypeScript, production build, targeted lint, and catalog/map checks are complete; Google Sheets API calls were not run against a live spreadsheet.
 
@@ -53,7 +54,7 @@ Updated: 2026-10-25
 2. Verify the configured service account can edit the intended spreadsheet and that its existing `Sheet1` has the expected account columns.
 3. Deploy from a reviewed commit and run a real account/review/bookmark flow on Vercel.
 4. Repo-wide `pnpm lint` reports 13 existing errors in unrelated UI/legal files; changed runtime files pass targeted ESLint. Decide whether to address those existing lint failures before a strict lint gate.
-5. Commit and push after live Sheets behavior is validated; no remote write has been performed.
+5. Push the candidate branch for Vercel preview if remote access permits; do not merge to production until spreadsheet access and runtime CRUD are confirmed.
 
 ## Next action
 
