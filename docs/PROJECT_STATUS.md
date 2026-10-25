@@ -20,6 +20,13 @@ Updated: 2026-10-25
 - `pnpm test` now fails on a pre-existing catalog assertion (`scripts/check-catalog.mjs:7` expects every budget to be null; current rebased catalog includes a `$22` value). This is unrelated to the fish UI.
 - ESLint on `app/discover.tsx` reports existing unused-variable and set-state-in-effect findings; the new fish component adds no reported lint finding.
 
+## Pixel-art refinement
+
+- User asked to make the Monthly Themes illustrations more Minecraft-like, then requested a front-facing puffer and simpler illustrations. The puffer now faces forward with symmetrical square eyes and fins; each featured-restaurant fish is reduced to a basic pixel silhouette with only a few color blocks.
+- CSS enables pixelated rendering and the bob animation is restricted to a one-pixel vertical movement so the square edges remain crisp. Reduced-motion handling remains in place.
+- Local preview visually confirmed the blocky puffer and fish on the featured cards. After this refinement, `pnpm check` passed and `pnpm exec next build --webpack` passed, including its TypeScript stage and static page generation. Local Node v26.12.1 emits the expected package engine warning because the project targets Node 22.x.
+- `git diff --check` passed. Commit and push for this refinement are pending.
+
 ## Changes made
 
 - Added shared Google Sheets client/configuration and safe tab initialization in `lib/google-sheets.ts`.
@@ -68,4 +75,4 @@ Updated: 2026-10-25
 
 ## Next action
 
-Review the Monthly Themes fish illustrations on the pushed branch. Separately, complete live Google Sheets/Vercel validation before production cutover.
+Complete live Google Sheets/Vercel validation before production cutover.

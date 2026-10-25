@@ -39,24 +39,25 @@ const SEA_FISH_PALETTES=[
 function SeaFish({variant=0,size=58}:{variant?:number;size?:number}){
  const colors=SEA_FISH_PALETTES[variant%SEA_FISH_PALETTES.length];
  const isPuffer=variant===0;
- return <svg className={`theme-fish-art ${isPuffer?"is-puffer":""}`} width={size} height={size*0.78} viewBox="0 0 88 68" fill="none" aria-hidden="true" focusable="false">
-  <g className="theme-fish-float" stroke="#083b4b" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round">
+ return <svg className={`theme-fish-art ${isPuffer?"is-puffer":""}`} width={size} height={size} viewBox="0 0 16 16" fill="none" shapeRendering="crispEdges" aria-hidden="true" focusable="false">
+  <g className="theme-fish-float" stroke="#083b4b" strokeWidth=".5" strokeLinejoin="miter">
    {isPuffer? <>
-    <path d="M20 33 7 23l3 14-3 12 14-8" fill={colors.fin}/>
-    <path d="m28 17-3-8 9 5m8-7 2 8m10-5-1 8m11-2-4 7m7 4 8-2-6 8m-1 9 6 6-10 1m-10 5 1 8-9-5m-12 3-5 6-3-9" fill={colors.fin}/>
-    <circle cx="43" cy="34" r="22" fill={colors.body}/>
-    <ellipse cx="45" cy="43" rx="13" ry="9" fill={colors.light} stroke="none" opacity=".8"/>
-    <path d="M56 48q7 4 12 0" fill="none" stroke={colors.accent}/>
+    <path d="M3 5 1 3v3l2 1v2l-2 1v3l2-2m10-6 2-2v3l-2 1v2l2 1v3l-2-2" fill={colors.fin}/>
+    <path d="M5 3V2h2V1h2v1h2v1h2v2h1v6h-1v2h-2v1H9v1H7v-1H5v-1H3v-2H2V5h1V3Z" fill={colors.body}/>
+    <path d="M5 11h6v2H5z" fill={colors.light} stroke="none"/>
+    <rect x="5" y="6" width="2" height="2" fill="#fff9e9" stroke="none"/>
+    <rect x="9" y="6" width="2" height="2" fill="#fff9e9" stroke="none"/>
+    <rect x="6" y="7" width="1" height="1" fill="#123541" stroke="none"/>
+    <rect x="9" y="7" width="1" height="1" fill="#123541" stroke="none"/>
+    <rect x="7" y="9" width="2" height="1" fill={colors.accent} stroke="none"/>
    </>:<>
-    <path d="M19 34 6 22l3 14-3 13 14-9" fill={colors.fin}/>
-    <path d="M17 34c8-19 39-24 58-2-8 21-39 27-58 2Z" fill={colors.body}/>
-    <path d="M39 17c-4 8-4 25 2 35m10-37c-4 9-3 23 3 33" fill="none" stroke={colors.accent} strokeWidth="5"/>
-    <path d="M34 17q-8-9-12-4l3 13m24 28q-3 9-11 8l-4-8" fill={colors.fin}/>
-    <path d="M27 41c8 7 22 10 34 5" fill="none" stroke={colors.light} strokeWidth="5"/>
+    <path d="M3 8 1 6v4l2-1m10-1 2-2v4l-2-1" fill={colors.fin}/>
+    <path d="M4 5h2V4h4v1h2v2h1v3h-1v2h-2v1H6v-1H4v-2H3V7h1z" fill={colors.body}/>
+    <rect x="6" y="5" width="1" height="6" fill={colors.light} stroke="none"/>
+    <rect x="9" y="5" width="1" height="6" fill={colors.accent} stroke="none"/>
+    <rect x="10" y="6" width="1" height="1" fill="#fff9e9" stroke="none"/>
+    <rect x="11" y="6" width="1" height="1" fill="#123541" stroke="none"/>
    </>}
-   <circle cx="58" cy="29" r="3.3" fill="#123541" stroke="white" strokeWidth="1.4"/>
-   <path d="M68 37q3 2 5 0" fill="none" stroke="#123541" strokeWidth="1.8"/>
-   <path d="M51 35q4 2 6 1" fill="none" stroke="#083b4b" strokeWidth="1.2" opacity=".5"/>
   </g>
  </svg>
 }
