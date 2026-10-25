@@ -31,7 +31,7 @@ Updated: 2026-10-25
 
 - PR #5 reported conflicts in `app/discover.tsx` and `app/premium-theme.css` against a newer `main` that includes the Gig ’eats branding, updated seafood selection and ratings, and an underwater theme treatment.
 - Merging `origin/main` at `00747815` into the feature branch. The newer main version is retained, and the simple inline pixel puffer and fish are reapplied to its Monthly Themes hero and featured restaurant cards. Existing map, restaurant, rating, and backend changes from main are preserved.
-- Conflict markers have been removed from the two source files. TypeScript (`pnpm check`) and `pnpm exec next build --webpack` both pass after the merge; the build generated all 10 static pages and listed the expected dynamic API routes. `git diff --cached --check` passes. The merge is ready to commit and push to update PR #5.
+- Conflict markers have been removed from the two source files. TypeScript (`pnpm check`) and `pnpm exec next build --webpack` both pass after the merge; the build generated all 10 static pages and listed the expected dynamic API routes. `git diff --cached --check` passed. Merge commit `dc0a60a1` (`Merge main and resolve monthly theme conflicts`) is created and ready to push to update PR #5.
 
 ## Changes made
 
