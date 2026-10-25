@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
-export async function GET() {
-  const cookieStore = await cookies(); // Omit 'await' if using Next.js 14 or earlier
+async function handleSession() {
+  const cookieStore = await cookies();
   const userCookie = cookieStore.get('tamu_user');
 
   if (userCookie?.value) {
@@ -22,6 +22,11 @@ export async function GET() {
   });
 }
 
-export async function POST(request: Request) {
-  return GET();
+// Enable GET and POST requests for session checks
+export async function GET() {
+  return handleSession();
+}
+
+export async function POST() {
+  return handleSession();
 }
