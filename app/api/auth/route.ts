@@ -1,7 +1,18 @@
 function getGoogleSheetsClient() {
-  const privateKey = process.env.GOOGLE_PRIVATE_KEY
-    ? process.env.GOOGLE_PRIVATE_KEY.replace(/^["']|["']$/g, '').replace(/\\n/g, '\n')
-    : undefined;
+  let privateKey = process.env.GOOGLE_PRIVATE_KEY || '';
+
+  // 1. Remove surrounding double/single quotes if present
+  privateKey = privateKey.replace(/^["']|["']$/g, '');
+
+  // 2. Unescape escaped newlines (\n -> actual line break)
+  privateKey = privateKey.replace(/\\n/g, '\n');
+
+  // 3. Ensure header and footer have proper newline formatting
+  if (!privateKey.includes('\n') && privateKey.includes('-----BEGIN PRIVATE KEY-----')) {
+    privateKey = privateKey
+      .replace('-----BEGIN PRIVATE KEY-----', '-----BEGIN PRIVATE KEY-----\n')
+      .replace('-----END PRIVATE KEY-----', '\n-----END PRIVATE KEY-----');
+  }
 
   const auth = new google.auth.GoogleAuth({
     credentials: {
@@ -10,5 +21,6 @@ function getGoogleSheetsClient() {
     },
     scopes: ['https://www.googleapis.com/auth/spreadsheets'],
   });
+
   return google.sheets({ version: 'v4', auth });
 }
