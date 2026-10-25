@@ -1,12 +1,15 @@
-# Set up TAMU email accounts
+# TAMU account and Google Sheets setup
 
-The login screen accepts an `@tamu.edu` email and password. A new account must confirm the mailbox through Supabase Auth before the site will accept its session or reviews. The server checks the confirmed email and exact domain on every protected request. A TAMU address alone does not prove current enrollment.
+The app stores account records, restaurant reviews, and saved spots in one Google spreadsheet. The service account accesses it only from server routes.
 
-1. Create or choose a Supabase project. In Authentication, enable Email and keep **Confirm email** enabled. Configure the project's Site URL and allowed redirect URL for the site you are hosting.
-2. Set up a working SMTP sender or Send Email hook for signup confirmations. Supabase's default sender is limited and is not suitable for arbitrary student addresses. Test a signup with a TAMU inbox you control before opening registration.
-3. For local development, copy `.env.example` to `.env.local`. Fill in `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` from that project. Use only a publishable key, never a service-role/admin key.
-4. Set `TAMU_EMAIL_DELIVERY_READY=true` only after confirmation mail works and redirect URLs are correct. Then restart `pnpm dev`.
+1. In Google Cloud, enable the Google Sheets API for the service account's project.
+2. Share the target spreadsheet with `GOOGLE_SERVICE_ACCOUNT_EMAIL` as an Editor. The account sheet is the existing `Sheet1` tab, with email, bcrypt password hash, and creation timestamp in columns A:C. Preserve current account rows.
+3. Set `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_PRIVATE_KEY`, and `GOOGLE_SHEET_ID` in the runtime environment. `SESSION_SECRET` is optional; without it, the app derives the session signing key from `GOOGLE_PRIVATE_KEY`.
+4. The app creates `Reviews` and `Spots` tabs on demand with headers. If either tab already exists with other columns, the app reports an error and leaves the data untouched; back it up and migrate its rows before changing the header.
+5. Redeploy/restart after changing credentials. Rotating `SESSION_SECRET` or the Google private key invalidates existing signed sessions.
 
-The server stores access/refresh tokens in Secure, HttpOnly, SameSite=Lax cookies. Supabase handles password storage. Reviews and bookmarks live in the Aggie Bites Supabase project when its environment variables are configured. The old Cloudflare D1 database is separate and is not automatically migrated. Write routes validate request origin and account identity, and D1 limits authentication attempts.
+Registration accepts only addresses ending in `@tamu.edu`; it does not verify mailbox ownership or student status. The account sheet contains password hashes and must remain shared only with trusted administrators and the app service account. Do not expose it through public sharing or client-side code.
 
-The older one-time-code endpoints remain in the code, but the current login screen uses the password endpoints. Supabase confirmation links use the Authentication project's email template and Site URL. When testing on `localhost`, a browser's handling of Secure cookies may differ from HTTPS production; use an HTTPS local tunnel for end-to-end auth tests if needed.
+Google Sheets does not enforce row-level security or uniqueness. The server verifies an HMAC-signed HttpOnly `tamu_user` cookie on protected write routes and uses that account identity for reviews and saved spots. Existing plaintext `tamu_user` cookies are intentionally rejected after the signed-cookie migration, so users will need to sign in again.
+
+The app stores reviews and saved spots in `Reviews` and `Spots` tabs. It initializes either missing tab automatically. Reviews can be edited and deleted by their signed-in account through the server API; bookmarks are keyed by normalized TAMU email. The service account should not be shared with spreadsheet viewers who do not need access to password hashes and private bookmarks.
