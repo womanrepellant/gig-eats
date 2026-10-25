@@ -10,7 +10,7 @@ Updated: 2026-10-25
 - Supabase route/data code, schema, environment references, and unused Supabase Auth endpoints have been removed from the Next.js runtime.
 - Session cookies are HMAC-signed and HttpOnly; signature key uses `SESSION_SECRET` when set, otherwise `GOOGLE_PRIVATE_KEY`. Legacy unsigned cookies will require a new login.
 - No production Google spreadsheet has been queried or changed from this session. Local credentials and a Vercel CLI/connector are absent; live spreadsheet operations and preview deployment remain unverified. The previous Supabase project was not modified. Existing Supabase reviews/bookmarks, if any, have not been migrated.
-- Base commit: `ae2568d2`. Candidate implementation commit: `990a181f` (`Move app storage to Google Sheets`) and status commit `ace00c6f` on branch `codex/google-sheets-storage`. Branch was pushed to `origin/codex/google-sheets-storage`; no PR or production merge was created.
+- Base commit: `ae2568d2`. Candidate implementation commit: `990a181f` (`Move app storage to Google Sheets`) with status commits `ace00c6f` and `7d30ab8c` on branch `codex/google-sheets-storage`. A final status correction is being recorded now. Branch was pushed to `origin/codex/google-sheets-storage`; no PR or production merge was created.
 
 ## Changes made
 
@@ -44,7 +44,7 @@ Updated: 2026-10-25
 - Session-cookie unit smoke check: 3 assertions passed (normalization, valid signature, forged/unsigned rejection).
 - `pnpm lint`: still fails with 13 errors and 9 warnings in existing unrelated UI/legal files.
 - `git diff --cached --check`: passed before candidate commit.
-- Candidate commits `990a181f` (implementation) and `ace00c6f` (status checkpoint) were created after local checks and pushed to `origin/codex/google-sheets-storage`.
+- Candidate commits `990a181f` (implementation), `ace00c6f` (validation checkpoint), and `7d30ab8c` (cutover-data note) were pushed to `origin/codex/google-sheets-storage`.
 - GitHub reported the pushed branch and offered a PR URL; Vercel preview status was not accessible from this session.
 - Before this conversion, `pnpm run build` with Turbopack was blocked in the local sandbox while a CSS worker attempted a local port bind (`Operation not permitted`); an elevated retry had the same result. The reported Vercel export error itself was corrected in the earlier source edit, but that edit was superseded by this full backend conversion.
 - Post-conversion TypeScript, production build, targeted lint, and catalog/map checks are complete; Google Sheets API calls were not run against a live spreadsheet.
@@ -60,4 +60,4 @@ Updated: 2026-10-25
 
 ## Next action
 
-Run post-conversion type-check and production build, repair any errors, then validate Google Sheets CRUD against an isolated/test spreadsheet or mock transport.
+Inspect the Vercel preview for `codex/google-sheets-storage` and validate Google Sheets CRUD against a test spreadsheet before production cutover.
