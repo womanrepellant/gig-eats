@@ -265,10 +265,91 @@ function EmailSignIn({
 
 type ReviewData={restaurantId:string;author:string;rating:number;dish:string;body:string;spend:number;visitedAt:string};
 function ReviewForm({user,initialId,existing,busy,onAccount,onSubmit}:{user:User;initialId:string;existing:PublicReview[];busy:boolean;onAccount:()=>void;onSubmit:(d:ReviewData)=>Promise<void>}) {
-  const [id,setId]=useState(initialId),[rating,setRating]=useState(0),[author,setAuthor]=useState(user?.name==="Fellow foodie"?"":user?.name??""),[dish,setDish]=useState(""),[body,setBody]=useState(""),[spend,setSpend]=useState(""),[date,setDate]=useState(new Date().toISOString().slice(0,10)),[error,setError]=useState("");
+  const [id,setId]=useState(initialId),[rating,setRating]=useState(0),[author,setAuthor]=useState(user?.name==="Fellow foodie"?"":user?.name??""),[dish,setDish]=useState(""),[body,setBody]=useState(""),[spend,setSpend]=useState(""),[date,setDate]=useState(new Date().toISOString().slice(0,10)),[error,setError]=setError("");
   const own=existing.find(r=>r.restaurantId===id&&r.own);
   useEffect(()=>{setRating(own?.rating??0);setDish(own?.dish??"");setBody(own?.body??"");setSpend(own?String(own.spend):"");setDate(own?.visitedAt??new Date().toISOString().slice(0,10));if(own)setAuthor(own.author)},[id,own]);
-  async function submit(e:FormEvent){e.preventDefault();if(!user?.eligible){onAccount();return}if(!rating){setError("Choose a star rating before posting.");return}setError("");try{await onSubmit({restaurantId:id,author,rating,dish,body,spend:+spend,visitedAt:date})}catch(e){setError(e instanceof Error?e.message:"Could not save your review.")}}
-  if(!user)return <div className="modal-padding auth-prompt"><GraduationCap size={32}/><h2>Share your take.</h2><p>Verify your @tamu.edu email before writing a review.</p><button className="primary" onClick={onAccount}>Sign in with TAMU <ArrowRight size={16}/></button></div>;
-  return <div className="modal-padding review-form-wrap"><span className="eyebrow">YOUR TASTE. YOUR TAKE.</span><h2>{own?"A fresh take on your bite.":"How was your last bite?"}</h2><p>Help another Aggie find something good.</p><form onSubmit={submit}><label>The spot<select required value={id} onChange={e=>setId(e.target.value)}><option value="" disabled>Choose a restaurant</option>{restaurants.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}</select></label><fieldset className="star-field"><legend>Your overall rating</legend><div>{[1,2,3,4,5].map(n=><button key={n} type="button" aria-label={`Rate ${n} star${n>1?"s":""}`} aria-pressed={rating===n} onClick={()=>setRating(n)}><Star size={32} fill={n<=rating?"currentColor":"none"}/></button>)}<span>{["Pick your stars","Not my bite","Could be better","Pretty good","Loved it","A new favorite"][rating]}</span></div></fieldset><label>Public display name<input required minLength={2} maxLength={40} value={author} onChange={e=>setAuthor(e.target.value)} placeholder="How should we credit you?"/></label><label>What did you order?<input required maxLength={100} value={dish} onChange={e=>setDish(e.target.value)} placeholder="The dish you came for (or came back for)"/></label><div className="form-row"><label>Spend per person ($)<input type="number" required min="1" max="500" step="1" value={spend} onChange={e=>setSpend(e.target.value)} placeholder="15"/></label><label>Visit date<input type="date" required max={new Date().toISOString().slice(0,10)} value={date} onChange={e=>setDate(e.target.value)}/></label></div><label>Your take<textarea required minLength={10} maxLength={1500} rows={4} value={body} onChange={e=>setBody(e.target.value)} placeholder="What was great? Anything you’d tell a friend before they go?"/><span className="character-count">{body.length}/1500</span></label>{error&&<p role="alert" className="form-error">{error}</p>}{!user?.eligible&&<div className="review-gate"><GraduationCap size={20}/><p>{user?"Verify your @tamu.edu email to post a review.":"Sign in with your @tamu.edu email to publish a review."}</p></div>}<button className="primary submit-review" type={user?.eligible?"submit":"button"} onClick={!user?.eligible?onAccount:undefined} disabled={busy}>{busy?"Saving your review…":user?.eligible?own?"Update my review":"Post my review":"Sign in with TAMU"}<ArrowRight size={16}/></button><p className="filter-note">One editable rating per account per spot. Keep it honest, helpful, and about your own experience.</p></form></div>;
+  
+  async function submit(e:FormEvent){
+    e.preventDefault();
+    if(!user){
+      onAccount();
+      return;
+    }
+    if(!rating){
+      setError("Choose a star rating before posting.");
+      return;
+    }
+    setError("");
+    try{
+      await onSubmit({restaurantId:id,author,rating,dish,body,spend:+spend,visitedAt:date});
+    }catch(e){
+      setError(e instanceof Error?e.message:"Could not save your review.");
+    }
+  }
+
+  if(!user) return (
+    <div className="modal-padding auth-prompt">
+      <GraduationCap size={32}/>
+      <h2>Share your take.</h2>
+      <p>Verify your @tamu.edu email before writing a review.</p>
+      <button className="primary" onClick={onAccount}>Sign in with TAMU <ArrowRight size={16}/></button>
+    </div>
+  );
+
+  return (
+    <div className="modal-padding review-form-wrap">
+      <span className="eyebrow">YOUR TASTE. YOUR TAKE.</span>
+      <h2>{own?"A fresh take on your bite.":"How was your last bite?"}</h2>
+      <p>Help another Aggie find something good.</p>
+      <form onSubmit={submit}>
+        <label>
+          The spot
+          <select required value={id} onChange={e=>setId(e.target.value)}>
+            <option value="" disabled>Choose a restaurant</option>
+            {restaurants.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}
+          </select>
+        </label>
+        <fieldset className="star-field">
+          <legend>Your overall rating</legend>
+          <div>
+            {[1,2,3,4,5].map(n=>(
+              <button key={n} type="button" aria-label={`Rate ${n} star${n>1?"s":""}`} aria-pressed={rating===n} onClick={()=>setRating(n)}>
+                <Star size={32} fill={n<=rating?"currentColor":"none"}/>
+              </button>
+            ))}
+            <span>{["Pick your stars","Not my bite","Could be better","Pretty good","Loved it","A new favorite"][rating]}</span>
+          </div>
+        </fieldset>
+        <label>
+          Public display name
+          <input required minLength={2} maxLength={40} value={author} onChange={e=>setAuthor(e.target.value)} placeholder="How should we credit you?"/>
+        </label>
+        <label>
+          What did you order?
+          <input required maxLength={100} value={dish} onChange={e=>setDish(e.target.value)} placeholder="The dish you came for (or came back for)"/>
+        </label>
+        <div className="form-row">
+          <label>
+            Spend per person ($)
+            <input type="number" required min="1" max="500" step="1" value={spend} onChange={e=>setSpend(e.target.value)} placeholder="15"/>
+          </label>
+          <label>
+            Visit date
+            <input type="date" required max={new Date().toISOString().slice(0,10)} value={date} onChange={e=>setDate(e.target.value)}/>
+          </label>
+        </div>
+        <label>
+          Your take
+          <textarea required minLength={10} maxLength={1500} rows={4} value={body} onChange={e=>setBody(e.target.value)} placeholder="What was great? Anything you’d tell a friend before they go?"/>
+          <span className="character-count">{body.length}/1500</span>
+        </label>
+        {error&&<p role="alert" className="form-error">{error}</p>}
+        <button className="primary submit-review" type="submit" disabled={busy}>
+          {busy?"Saving your review…":own?"Update my review":"Post my review"}
+          <ArrowRight size={16}/>
+        </button>
+        <p className="filter-note">One editable rating per account per spot. Keep it honest, helpful, and about your own experience.</p>
+      </form>
+    </div>
+  );
 }
